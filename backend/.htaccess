@@ -1,0 +1,13 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  
+  # Redirect all requests to Node.js application
+  # Adjust the port based on your cPanel Node.js app configuration
+  RewriteRule ^$ http://127.0.0.1:%{ENV:PORT}/ [P,L]
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ http://127.0.0.1:%{ENV:PORT}/$1 [P,L]
+</IfModule>
+
+# If proxy module not available, this file won't cause issues
+# For most cPanel setups, Node.js apps are configured via the Node.js Selector

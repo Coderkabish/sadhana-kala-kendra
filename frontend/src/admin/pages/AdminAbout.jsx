@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { SERVER_ROOT_URL } from "../services/api";
 import {
   // BOD CRUD
   getAllBOD,
@@ -502,9 +503,8 @@ export default function AdminAbout() {
   const [message, setMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // 🚩 FIX: Correctly define SERVER_BASE_URL
-  const API_BASE_URL = axios.defaults.baseURL || "http://localhost:5000/api";
-  const SERVER_BASE_URL = API_BASE_URL.replace(/\/api$/, "");
+  // Use centralized SERVER_ROOT_URL from api.js
+  const SERVER_BASE_URL = SERVER_ROOT_URL;
 
   const getErrorMessage = (err, defaultMsg) => {
     const status = err.response?.status;

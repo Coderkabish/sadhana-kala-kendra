@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useCallback } from "react";
-import { getAllTeachers } from "../admin/services/teachersService"; 
+import { getAllTeachers } from "../admin/services/teachersService";
+import { SERVER_ROOT_URL } from "../admin/services/api";
 
-const SERVER_BASE_URL = ''; 
+const SERVER_BASE_URL = SERVER_ROOT_URL;
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]); 

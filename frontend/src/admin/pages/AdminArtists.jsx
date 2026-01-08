@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
-import api from "../services/api";
+import api, { SERVER_ROOT_URL } from "../services/api";
 import {
   getAllArtists,
   createArtist,
@@ -221,10 +221,8 @@ export default function AdminArtist() {
   const [message, setMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Calculate SERVER_ROOT_URL once
-  const SERVER_ROOT_URL = (
-    api.defaults.baseURL || "http://localhost:5000/api"
-  ).replace("/api", "");
+  // Use centralized SERVER_ROOT_URL from api.js
+  const serverRootUrl = SERVER_ROOT_URL;
 
   const fetchData = useCallback(async () => {
     setLoading(true);

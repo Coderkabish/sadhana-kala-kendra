@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import api from "../services/api"; // ✅ FIXED: Use api instance instead of axios
+import api, { SERVER_ROOT_URL } from "../services/api"; // Use centralized api instance
 import {
   getAllCourses,
   createCourse,
@@ -537,9 +537,8 @@ export default function AdminCourses() {
   const [message, setMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // ✅ FIXED: Use api.defaults.baseURL instead of axios.defaults
-  const API_BASE_URL = api.defaults.baseURL || "";
-  const SERVER_BASE_URL = API_BASE_URL.replace(/\/api$/, "");
+  // Use centralized SERVER_ROOT_URL from api.js
+  const SERVER_BASE_URL = SERVER_ROOT_URL;
 
   const fetchData = useCallback(async () => {
     setLoading(true);

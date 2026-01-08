@@ -1,7 +1,19 @@
 import axios from "axios";
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-const SERVER_ROOT_URL = API_BASE_URL.split("/api")[0];
+// Use environment variable with fallback for development
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "/api";
+
+// Get server root URL (without /api)
+const getServerRootUrl = () => {
+    if (!API_BASE_URL || API_BASE_URL === "/api") {
+        // In production with same domain, return empty string for relative paths
+        return "";
+    }
+    // Remove /api from the end if present
+    return API_BASE_URL.replace(/\/api\/?$/, "");
+};
+
+const SERVER_ROOT_URL = getServerRootUrl();
 
 const api = axios.create({
     baseURL: API_BASE_URL,

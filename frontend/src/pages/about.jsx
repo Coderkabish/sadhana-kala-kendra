@@ -4,6 +4,7 @@ import {
   getAllPrograms,
   getAllTeamMembers,
 } from "../admin/services/aboutService.js";
+import { SERVER_ROOT_URL } from "../admin/services/api";
 import {
   FaAward,
   FaUsers,
@@ -27,10 +28,8 @@ const About = () => {
   const [activeTeamMember, setActiveTeamMember] = useState(null);
   const [selectedProgramIndex, setSelectedProgramIndex] = useState(null);
 
-  const getBaseUrl = () => {
-    return "http://localhost:5000";
-  };
-  const SERVER_BASE_URL = getBaseUrl();
+  // Use centralized SERVER_ROOT_URL from api.js
+  const SERVER_BASE_URL = SERVER_ROOT_URL;
 
   // Fetch Data from Backend
   useEffect(() => {

@@ -5,8 +5,9 @@ import {
   updateTeacher,
   deleteTeacher,
 } from "../services/teachersService";
+import { SERVER_ROOT_URL } from "../services/api";
 
-const SERVER_BASE_URL = "";
+const SERVER_BASE_URL = SERVER_ROOT_URL;
 
 const Icons = {
   User: (props) => (
