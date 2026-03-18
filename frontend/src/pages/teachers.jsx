@@ -3,6 +3,7 @@ import { getAllTeachers } from "../admin/services/teachersService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 
 const SERVER_BASE_URL = SERVER_ROOT_URL;
+const TEACHER_IMAGE_FALLBACK = "https://via.placeholder.com/300x400?text=Teacher+Image";
 
 const Teachers = () => {
   const [teachers, setTeachers] = useState([]); 
@@ -30,7 +31,13 @@ const Teachers = () => {
   }, [fetchTeachers]);
 
   const getImageUrl = (imagePath) => {
-    return imagePath ? `${SERVER_BASE_URL}${imagePath}` : 'https://via.placeholder.com/300x400?text=Teacher+Image';
+    if (!imagePath) return TEACHER_IMAGE_FALLBACK;
+
+    // Backend may return either absolute URLs or relative upload paths.
+    if (/^https?:\/\//i.test(imagePath)) return imagePath;
+
+    const normalizedPath = imagePath.startsWith("/") ? imagePath : `/${imagePath}`;
+    return `${SERVER_BASE_URL}${normalizedPath}`;
   };
 
   if (loading) {
@@ -84,6 +91,10 @@ const Teachers = () => {
                   <img
                     src={getImageUrl(teacher.profile_image)}
                     alt={teacher.full_name} 
+                    onError={(e) => {
+                      e.currentTarget.onerror = null;
+                      e.currentTarget.src = TEACHER_IMAGE_FALLBACK;
+                    }}
 className="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-105"                  />
                 </div>
 
@@ -115,6 +126,10 @@ className="w-full h-56 object-cover object-top transition-transform duration-500
               <img
                 src={getImageUrl(selectedTeacher.profile_image)}
                 alt={selectedTeacher.full_name} 
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = TEACHER_IMAGE_FALLBACK;
+                }}
                 className="w-40 h-40 md:w-56 md:h-56 object-cover rounded-full mx-auto shadow-lg mb-6"
               />
               <h2 className="text-3xl md:text-4xl font-extrabold text-[#191938] mb-2 font-['Inter']">

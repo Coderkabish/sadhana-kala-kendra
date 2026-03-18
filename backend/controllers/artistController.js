@@ -2,6 +2,7 @@ import ArtistModel from "../models/artistModel.js";
 import fs from "fs/promises";
 import path from "path";
 import { logAdminAction } from "../utils/auditLogger.js"; // Updated import
+import { slugify } from "../utils/slug.js";
 
 
 class ArtistController {
@@ -42,7 +43,10 @@ class ArtistController {
   // GET artist by ID
   static async getById(req, res, next) {
     try {
-      const artist = await ArtistModel.getById(req.params.id);
+      const slugOrId = req.params.slug;
+      const artist = Number.isFinite(Number(slugOrId))
+        ? await ArtistModel.getById(slugOrId)
+        : await ArtistModel.getBySlug(slugOrId);
       if (!artist) return res.status(404).json({ message: "Artist not found" });
       res.json(artist);
     } catch (err) {
@@ -53,12 +57,20 @@ class ArtistController {
   // CREATE artist
   static async create(req, res, next) {
     try {
-      const { full_name, bio } = req.body;
+      const { full_name, bio, slug, seo_title, seo_description, seo_keywords } = req.body;
 
       // Multer saves the file → we store only the relative path
       const profile_image = req.file ? `/uploads/${req.file.filename}` : null;
 
-      const id = await ArtistModel.create({ full_name, bio, profile_image });
+      const id = await ArtistModel.create({
+        full_name,
+        slug: slugify(slug || full_name),
+        bio,
+        profile_image,
+        seo_title,
+        seo_description,
+        seo_keywords,
+      });
       await logAdminAction({
         admin_id: req.admin.admin_id,
         action: "CREATE",
@@ -69,6 +81,10 @@ class ArtistController {
 
       res.status(201).json({ message: "Artist created", id });
     } catch (err) {
+      if (err?.code === "ER_DUP_ENTRY") {
+        if (req.file) await ArtistController.removeFile(`/uploads/${req.file.filename}`);
+        return res.status(409).json({ message: "Slug already exists." });
+      }
       if (req.file) await ArtistController.removeFile(`/uploads/${req.file.filename}`);
       next(err);
     }
@@ -77,7 +93,7 @@ class ArtistController {
   // UPDATE artist
   static async update(req, res, next) {
   try {
-    const { full_name, bio } = req.body;
+    const { full_name, bio, slug, seo_title, seo_description, seo_keywords } = req.body;
     let profile_image = undefined; // only set if new file uploaded
 
     if (req.file) {
@@ -88,7 +104,15 @@ class ArtistController {
       }
     }
 
-    await ArtistModel.update(req.params.id, { full_name, bio, profile_image });
+    await ArtistModel.update(req.params.id, {
+      full_name,
+      slug: slug !== undefined || full_name !== undefined ? slugify(slug || full_name) : undefined,
+      bio,
+      profile_image,
+      seo_title,
+      seo_description,
+      seo_keywords,
+    });
 
     await logAdminAction({
       admin_id: req.admin.admin_id,
@@ -100,6 +124,10 @@ class ArtistController {
 
     res.json({ message: "Artist updated" });
   } catch (err) {
+    if (err?.code === "ER_DUP_ENTRY") {
+      if (req.file) await ArtistController.removeFile(`/uploads/${req.file.filename}`);
+      return res.status(409).json({ message: "Slug already exists." });
+    }
     console.error("Artist update error:", err); 
     if (req.file) await ArtistController.removeFile(`/uploads/${req.file.filename}`);
     next(err);

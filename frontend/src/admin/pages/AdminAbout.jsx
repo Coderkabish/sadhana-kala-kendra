@@ -1,8 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
 import { SERVER_ROOT_URL } from "../services/api";
 import {
-  // BOD CRUD
   getAllBOD,
   createBOD,
   updateBOD,
@@ -15,23 +13,19 @@ import {
   createTeamMember,
   updateTeamMember,
   deleteTeamMember,
-  // >>> END - NEW TEAM MEMBERS CODE <<<
-} from "../services/aboutService"; // Ensure Team Member functions are available in this service
+} from "../services/aboutService";
+
+const LucideIcon = ({ children }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">{children}</svg>
+);
 
 const Alert = ({ message, type, onClose }) => (
-  <div
-    className={`p-4 rounded-lg font-roboto mb-4 ${
-      type === "error"
-        ? "bg-red-100 text-red-800 border border-red-400"
-        : type === "success"
-        ? "bg-green-100 text-green-800 border border-green-400"
-        : "bg-blue-100 text-blue-800 border border-blue-400"
-    }`}
-  >
-    {message}
-    <button onClick={onClose} className="float-right font-bold ml-4">
-      ×
-    </button>
+  <div className={`flex items-start md:items-center justify-between p-4 mb-6 rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300 ${type === "error" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
+    <div className="flex items-center font-medium">
+      <span className="shrink-0">{type === "error" ? "⚠️" : "✅"}</span>
+      <span className="ml-3 text-sm md:text-base">{message}</span>
+    </div>
+    <button onClick={onClose} className="hover:opacity-70 transition-opacity text-xl leading-none ml-4">&times;</button>
   </div>
 );
 
@@ -197,7 +191,11 @@ const formatDateForInput = (dateString) => {
 const ProgramForm = ({ program, onSubmit, onCancel, isSaving }) => {
   const [formData, setFormData] = useState({
     program_date: program?.program_date ? formatDateForInput(program.program_date) : "",    title: program?.title || "",
+    slug: program?.slug || "",
     description: program?.description || "",
+    seo_title: program?.seo_title || "",
+    seo_description: program?.seo_description || "",
+    seo_keywords: program?.seo_keywords || "",
     image_file: null,
     existing_image: program?.image_url || "",
   });
@@ -269,6 +267,19 @@ const ProgramForm = ({ program, onSubmit, onCancel, isSaving }) => {
         </div>
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700">
+            Slug (Optional)
+          </label>
+          <input
+            type="text"
+            name="slug"
+            value={formData.slug}
+            onChange={handleChange}
+            placeholder="annual-music-fest"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
             Description
           </label>
           <textarea
@@ -276,6 +287,46 @@ const ProgramForm = ({ program, onSubmit, onCancel, isSaving }) => {
             rows="4"
             value={formData.description}
             onChange={handleChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Title
+          </label>
+          <input
+            type="text"
+            name="seo_title"
+            value={formData.seo_title}
+            onChange={handleChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Description
+          </label>
+          <textarea
+            name="seo_description"
+            rows="3"
+            value={formData.seo_description}
+            onChange={handleChange}
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Keywords
+          </label>
+          <input
+            type="text"
+            name="seo_keywords"
+            value={formData.seo_keywords}
+            onChange={handleChange}
+            placeholder="music, culture, programs"
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
           />
         </div>
@@ -869,175 +920,103 @@ export default function AdminAbout() {
   // >>> END - NEW TEAM MEMBERS CODE (renderTeamMembersTable) <<<
 
   return (
-    <div className="container mx-auto p-4 md:p-8 lg:p-12 font-sans">
-      <h1 className="text-4xl lg:text-3xl font-playfair font-extrabold text-[#0f0f50] mb-8 border-b-4 border-indigo-300 pb-4 flex items-center">
-        Manage About Us Content
-      </h1>
-
-      <div className="mb-6">
-        {error && (
-          <Alert message={error} type="error" onClose={() => setError(null)} />
-        )}
-        {message && (
-          <Alert
-            message={message}
-            type="success"
-            onClose={() => setMessage(null)}
-          />
-        )}
-      </div>
-
-      {/* Tab Navigation */}
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8 font-semibold">
-          <button
-            onClick={() => {
-              setActiveTab("bod");
-              handleCancel();
-            }}
-            className={`py-3 px-1 border-b-2 font-medium text-sm transition duration-150 ${
-              activeTab === "bod"
-                ? "border-indigo-500 text-indigo-600 font-sans"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Board of Directors (BOD)
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("programs"); // Changed from "journey"
-              handleCancel();
-            }}
-            className={`py-3 px-1 border-b-2 font-medium text-sm transition duration-150 ${
-              activeTab === "programs"
-                ? "border-purple-500 text-purple-600 font-sans"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Programs
-          </button>
-          {/* >>> START - NEW TEAM MEMBERS CODE (Tab Navigation Button) <<< */}
-          <button
-            onClick={() => {
-              setActiveTab("team");
-              handleCancel();
-            }}
-            className={`py-3 px-1 border-b-2 font-medium text-sm transition duration-150 ${
-              activeTab === "team"
-                ? "border-indigo-500 text-indigo-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Team Members
-          </button>
-          {/* >>> END - NEW TEAM MEMBERS CODE (Tab Navigation Button) <<< */}
-        </nav>
-      </div>
-
-      {/* Form Area */}
-      {showForm && (
-        <div className="mb-8">
-          {activeTab === "bod" ? (
-            <BODForm
-              member={editingMember}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-              isSaving={isSaving}
-            />
-          ) : activeTab === "programs" ? (
-            <ProgramForm
-              program={editingProgram}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-              isSaving={isSaving}
-            />
-          ) : (
-            activeTab === "team" && (
-              // >>> START - NEW TEAM MEMBERS CODE (Form Area) <<<
-              <TeamMemberForm
-                member={editingTeamMember}
-                onSubmit={handleFormSubmit}
-                onCancel={handleCancel}
-                isSaving={isSaving}
-              />
-              // >>> END - NEW TEAM MEMBERS CODE (Form Area) <<<
-            )
-          )}
-        </div>
-      )}
-
-      {/* Action Button */}
-      {!showForm && (
-        <button
-          onClick={() => {
-            // Pass an empty object to trigger 'Add' mode in Form components
-            if (activeTab === "bod") setEditingMember({});
-            if (activeTab === "programs") setEditingProgram({});
-            // >>> START - NEW TEAM MEMBERS CODE (Action Button) <<<
-            if (activeTab === "team") setEditingTeamMember({});
-            // >>> END - NEW TEAM MEMBERS CODE (Action Button) <<<
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className={`mb-8 px-6 py-3 text-white font-semibold font-sans rounded-lg shadow-md transition duration-150 font-inter ${
-            activeTab === "bod" || activeTab === "team" // Apply indigo style to BOD and Team
-              ? "bg-indigo-600 hover:bg-indigo-700"
-              : "bg-purple-600 hover:bg-purple-700"
-          }`}
-        >
-          + Add New{" "}
-          {activeTab === "bod"
-            ? "Member"
-            : activeTab === "programs"
-            ? "Milestone"
-            : "Member"}
-        </button>
-      )}
-
-      {/* Data Table */}
-      {loading && !showForm && (
-        <div className="text-center py-10 font-sans text-lg text-gray-600">
-          Loading {activeTab} data...
-        </div>
-      )}
-
-      {!loading && !error && !showForm && (
-        <>
-          {activeTab === "bod" && bodMembers.length > 0 && renderBODTable()}
-          {activeTab === "bod" && bodMembers.length === 0 && (
-            <p className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 font-sans">
-              No Board of Directors members found. Click "Add New Member" to
-              start.
-            </p>
-          )}
-
-          {activeTab === "programs" &&
-            programs.length > 0 &&
-            renderProgramsTable()}
-          {activeTab === "programs" && programs.length === 0 && (
-            <p className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 font-roboto">
-              No Programs found. Click "Add New Program" to start.
-            </p>
-          )}
-
-          {/* >>> START - NEW TEAM MEMBERS CODE (Table Area) <<< */}
-          {!loading &&
-            !error &&
-            !showForm &&
-            activeTab === "team" &&
-            teamMembers.length > 0 &&
-            renderTeamMembersTable()}
-          {!loading &&
-            !error &&
-            !showForm &&
-            activeTab === "team" &&
-            teamMembers.length === 0 && (
-              <p className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 font-roboto">
-                No Team Members found. Click "Add New Member" to start.
-              </p>
+    <div className="min-h-screen bg-[#f8fafc] pb-10 text-slate-900">
+      {/* HEADER SECTION */}
+      <div className="bg-white border-b border-slate-200 mb-6 md:mb-10">
+        <div className="container mx-auto px-4 sm:px-6 py-6 md:py-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="text-left">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">About Console</h1>
+              <p className="text-slate-500 text-sm md:text-base mt-1">Manage About Us, Programs, and Team Members.</p>
+            </div>
+            {!showForm && (
+              <button
+                onClick={() => {
+                  if (activeTab === "bod") setEditingMember({});
+                  if (activeTab === "programs") setEditingProgram({});
+                  if (activeTab === "team") setEditingTeamMember({});
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="w-full md:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                <LucideIcon><path d="M12 5v14M5 12h14" /></LucideIcon>
+                Add {activeTab === "bod" ? "BOD Member" : activeTab === "programs" ? "Program" : "Team Member"}
+              </button>
             )}
-          {/* >>> END - NEW TEAM MEMBERS CODE (Table Area) <<< */}
-        </>
-      )}
+          </div>
+          {!showForm && (
+            <div className="flex gap-6 md:gap-10 mt-8 border-b border-slate-100 overflow-x-auto no-scrollbar">
+              {[
+                { key: "bod", label: "BOD" },
+                { key: "programs", label: "Programs" },
+                { key: "team", label: "Team" },
+              ].map((tab) => (
+                <button
+                  key={tab.key}
+                  onClick={() => { setActiveTab(tab.key); handleCancel(); }}
+                  className={`pb-4 text-[11px] md:text-sm font-bold uppercase tracking-[0.15em] transition-all whitespace-nowrap relative ${activeTab === tab.key ? "text-indigo-600" : "text-slate-400 hover:text-slate-600"}`}
+                >
+                  {tab.label}
+                  {activeTab === tab.key && <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-600 rounded-t-full"></div>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 sm:px-6">
+        {error && <Alert message={error} type="error" onClose={() => setError(null)} />}
+        {message && <Alert message={message} type="success" onClose={() => setMessage(null)} />}
+
+        {showForm ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10 w-full max-w-4xl mx-auto">
+            {activeTab === "bod" ? (
+              <BODForm member={editingMember} onSubmit={handleFormSubmit} onCancel={handleCancel} isSaving={isSaving} />
+            ) : activeTab === "programs" ? (
+              <ProgramForm program={editingProgram} onSubmit={handleFormSubmit} onCancel={handleCancel} isSaving={isSaving} />
+            ) : (
+              <TeamMemberForm member={editingTeamMember} onSubmit={handleFormSubmit} onCancel={handleCancel} isSaving={isSaving} />
+            )}
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {loading ? (
+              <div className="p-16 text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
+              </div>
+            ) : (
+              <>
+                {activeTab === "bod" && bodMembers.length > 0 && renderBODTable()}
+                {activeTab === "bod" && bodMembers.length === 0 && (
+                  <div className="p-16 md:p-24 text-center">
+                    <div className="text-5xl md:text-6xl mb-4 grayscale opacity-50">👤</div>
+                    <h3 className="text-lg md:text-xl font-bold text-slate-800">No BOD Members</h3>
+                    <p className="text-slate-400 text-sm mt-1">No Board of Directors members found in the database.</p>
+                  </div>
+                )}
+                {activeTab === "programs" && programs.length > 0 && renderProgramsTable()}
+                {activeTab === "programs" && programs.length === 0 && (
+                  <div className="p-16 md:p-24 text-center">
+                    <div className="text-5xl md:text-6xl mb-4 grayscale opacity-50">🎯</div>
+                    <h3 className="text-lg md:text-xl font-bold text-slate-800">No Programs</h3>
+                    <p className="text-slate-400 text-sm mt-1">No Programs found in the database.</p>
+                  </div>
+                )}
+                {activeTab === "team" && teamMembers.length > 0 && renderTeamMembersTable()}
+                {activeTab === "team" && teamMembers.length === 0 && (
+                  <div className="p-16 md:p-24 text-center">
+                    <div className="text-5xl md:text-6xl mb-4 grayscale opacity-50">👥</div>
+                    <h3 className="text-lg md:text-xl font-bold text-slate-800">No Team Members</h3>
+                    <p className="text-slate-400 text-sm mt-1">No Team Members found in the database.</p>
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
-import api, { SERVER_ROOT_URL } from "../services/api"; // Use centralized api instance
+import { SERVER_ROOT_URL } from "../services/api";
 import {
   getAllCourses,
   createCourse,
@@ -8,24 +8,17 @@ import {
 } from "../services/coursesService";
 import { getAllTeachers } from "../services/teachersService";
 
+const LucideIcon = ({ children }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">{children}</svg>
+);
+
 const Alert = ({ message, type, onClose }) => (
-  <div
-    className={`p-4 rounded-xl font-sans text-base mb-6 shadow-lg border-l-4 ${
-      type === "error"
-        ? "bg-red-100 border-red-500 text-red-800"
-        : type === "success"
-        ? "bg-emerald-100 border-emerald-500 text-emerald-800"
-        : "bg-blue-100 border-blue-500 text-blue-800"
-    }`}
-  >
-    <span className="font-medium">{message}</span>
-    <button
-      onClick={onClose}
-      className="float-right font-bold ml-4 text-xl p-1 -mt-1 text-gray-700 hover:text-gray-900 transition-colors duration-150"
-      aria-label="Close Alert"
-    >
-      &times;
-    </button>
+  <div className={`flex items-start md:items-center justify-between p-4 mb-6 rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300 ${type === "error" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
+    <div className="flex items-center font-medium">
+      <span className="shrink-0">{type === "error" ? "⚠️" : "✅"}</span>
+      <span className="ml-3 text-sm md:text-base">{message}</span>
+    </div>
+    <button onClick={onClose} className="hover:opacity-70 transition-opacity text-xl leading-none ml-4">&times;</button>
   </div>
 );
 
@@ -249,9 +242,13 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
 
   const [formData, setFormData] = useState({
     title: course?.course_name || "",
+    slug: course?.slug || "",
     description: course?.description || "",
     level: course?.level || "",
     teacher_name: course?.teacher_name || "",
+    seo_title: course?.seo_title || "",
+    seo_description: course?.seo_description || "",
+    seo_keywords: course?.seo_keywords || "",
     course_image_file: null,
     existing_image_url: course?.image_url || "",
     schedules: course?.schedules || [],
@@ -358,6 +355,20 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-3">
+            <label className={labelClass}>Slug (Optional)</label>
+            <input
+              type="text"
+              name="slug"
+              value={formData.slug}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="hindustani-vocal"
+            />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="md:col-span-1">
             <label className={labelClass}>
               Main Teacher <span className="text-red-500">*</span>
@@ -422,6 +433,44 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
           <p className="mt-2 text-xs font-sans text-gray-500">
             Maximum file size 5MB. Formats: .png, .jpg, .jpeg, .webp.
           </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="md:col-span-2">
+            <label className={labelClass}>SEO Title</label>
+            <input
+              type="text"
+              name="seo_title"
+              value={formData.seo_title}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="Best music courses in Jaipur"
+            />
+          </div>
+
+          <div className="md:col-span-2">
+            <label className={labelClass}>SEO Description</label>
+            <textarea
+              name="seo_description"
+              value={formData.seo_description}
+              onChange={handleChange}
+              rows="3"
+              className={inputClass}
+              placeholder="Short SEO-friendly summary of the course"
+            ></textarea>
+          </div>
+
+          <div className="md:col-span-2">
+            <label className={labelClass}>SEO Keywords</label>
+            <input
+              type="text"
+              name="seo_keywords"
+              value={formData.seo_keywords}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="music classes, vocal training, beginners"
+            />
+          </div>
         </div>
       </div>
 
@@ -638,268 +687,108 @@ export default function AdminCourses() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto p-4 md:p-8 lg:p-12 font-sans">
-        <h1 className="text-4xl lg:text-3xl font-playfair font-extrabold text-[#0f0f50] mb-8 border-b-4 border-indigo-300 pb-4 flex items-center">
-          <span className="text-indigo-600"></span> Manage Courses
-        </h1>
-
-        <div className="mb-6">
-          {error && (
-            <Alert
-              message={error}
-              type="error"
-              onClose={() => setError(null)}
-            />
-          )}
-          {message && (
-            <Alert
-              message={message}
-              type="success"
-              onClose={() => setMessage(null)}
-            />
-          )}
-        </div>
-
-        {/* Form Area */}
-        {showForm && (
-          <div className="mb-12 transition-all duration-300">
-            <CourseForm
-              course={editingCourse}
-              onSubmit={handleFormSubmit}
-              onCancel={handleCancel}
-              isSaving={isSaving}
-              teachers={teachers}
-            />
-          </div>
-        )}
-
-        {/* Action Button */}
-        {!showForm && (
-          <button
-            onClick={() => {
-              setEditingCourse({ schedules: [] });
-              window.scrollTo({ top: 0, behavior: "smooth" });
-            }}
-            className="mb-8 px-8 py-3 text-lg font-sans text-white font-semibold rounded-xl shadow-xl transition duration-200 bg-indigo-600 hover:bg-indigo-700 transform hover:scale-[1.02] active:scale-100 flex items-center"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 mr-2"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-            Add New Course
-          </button>
-        )}
-
-        {/* Data Table */}
-        {!showForm && (
-          <div className="bg-white shadow-2xl rounded-2xl p-6 border border-gray-200">
-            {loading && (
-              <div className="text-center py-12 text-xl text-indigo-600 font-semibold flex justify-center items-center">
-                <svg
-                  className="animate-spin -ml-1 mr-3 h-6 w-6 text-indigo-600"
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                >
-                  <circle
-                    className="opacity-25"
-                    cx="12"
-                    cy="12"
-                    r="10"
-                    stroke="currentColor"
-                    strokeWidth="4"
-                  ></circle>
-                  <path
-                    className="opacity-75"
-                    fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
-                </svg>
-                Loading course data...
-              </div>
+    <div className="min-h-screen bg-[#f8fafc] pb-10 text-slate-900">
+      {/* HEADER SECTION */}
+      <div className="bg-white border-b border-slate-200 mb-6 md:mb-10">
+        <div className="container mx-auto px-4 sm:px-6 py-6 md:py-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="text-left">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">Courses Console</h1>
+              <p className="text-slate-500 text-sm md:text-base mt-1">Manage all courses, teachers, and schedules.</p>
+            </div>
+            {!showForm && (
+              <button
+                onClick={() => {
+                  setEditingCourse({ schedules: [] });
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className="w-full md:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                <LucideIcon><path d="M12 5v14M5 12h14" /></LucideIcon>
+                Add Course
+              </button>
             )}
-
-            {!loading &&
-              !error &&
-              (courses.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="min-w-full bg-white font-sans divide-y divide-gray-200">
-                    <thead className="bg-gray-100 border-b-2 border-indigo-400">
-                      <tr>
-                        <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider rounded-tl-xl">
-                          Image
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider">
-                          Course Title & Level
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider hidden sm:table-cell">
-                          Main Teacher
-                        </th>
-                        <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider hidden lg:table-cell">
-                          Class Schedules
-                        </th>
-                        <th className="px-4 py-3 text-center text-xs font-sans font-bold text-gray-700 uppercase tracking-wider rounded-tr-xl">
-                          Actions
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {courses.map((course) => (
-                        <tr
-                          key={course.course_id}
-                          className="hover:bg-indigo-50 transition duration-150"
-                        >
-                          <td className="px-4 py-4">
-                            {course.image_url ? (
-                              <img
-                                src={`${SERVER_BASE_URL}${course.image_url}`}
-                                alt={course.course_name}
-                                className="w-16 h-16 rounded-lg object-cover shadow-md border border-gray-200"
-                              />
-                            ) : (
-                              <div className="w-16 h-16 rounded-lg bg-gray-200 flex items-center justify-center text-xs text-gray-500 text-center leading-none p-2 font-semibold border-2 border-dashed border-gray-400">
-                                No Image
-                              </div>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-sm font-sans font-bold text-gray-900">
-                            {course.course_name}
-                            <span
-                              className={`block text-xs font-sans font-medium mt-1 p-1 px-2 rounded-full w-fit ${
-                                course.level === "Advanced"
-                                  ? "bg-orange-100 text-orange-800 border border-orange-200"
-                                  : "bg-green-100 text-green-800 border border-green-200"
-                              }`}
-                            >
-                              {course.level}
-                            </span>
-                          </td>
-                          <td className="px-4 py-4 text-sm font-sans text-gray-700 hidden sm:table-cell font-medium">
-                            {course.teacher_name || "N/A"}
-                          </td>
-                          <td className="px-4 py-4 text-sm font-sans text-gray-500 hidden lg:table-cell">
-                            {course.schedules && course.schedules.length > 0 ? (
-                              <div className="flex flex-wrap gap-2">
-                                {course.schedules.map((s, i) => (
-                                  <span
-                                    key={i}
-                                    className="bg-indigo-100 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-indigo-200"
-                                  >
-                                    {formatSchedule(s)}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : (
-                              <span className="text-xs font-sans font-semibold text-red-600 bg-red-100 p-1 px-2 rounded-full border border-red-300">
-                                No Schedules Set
-                              </span>
-                            )}
-                          </td>
-                          <td className="px-4 py-4 text-center text-sm font-sans font-medium space-x-2 whitespace-nowrap">
-                            <button
-                              onClick={() => {
-                                setEditingCourse(course);
-                                window.scrollTo({ top: 0, behavior: "smooth" });
-                              }}
-                              className="text-indigo-600 hover:text-indigo-900 px-3 py-2 rounded-lg hover:bg-indigo-100 transition duration-150 font-semibold"
-                              aria-label={`Edit ${course.course_name}`}
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={() => handleDelete(course.course_id)}
-                              className="text-red-600 hover:text-red-900 px-3 py-2 rounded-lg hover:bg-red-100 transition duration-150 font-semibold"
-                              aria-label={`Delete ${course.course_name}`}
-                            >
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <p className="p-6 bg-yellow-100 text-yellow-800 rounded-xl border border-yellow-400 font-medium flex items-center shadow-md">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-6 w-6 mr-3 text-yellow-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.372 17c-.77 1.333.192 3 1.732 3z"
-                    />
-                  </svg>
-                  No courses found. Click 'Add New Course' above to create one.
-                </p>
-              ))}
           </div>
-        )}
+        </div>
       </div>
 
-      {/* PUBLIC WEBSITE PREVIEW SECTION */}
-      <div className="bg-indigo-900 py-12 px-4 sm:px-6 lg:px-8 border-t-8 border-indigo-600 mt-12">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-playfair font-bold text-white mb-10 text-center">
-            Public Website Preview: Featured Courses
-          </h2>
+      <div className="container mx-auto px-4 sm:px-6">
+        {error && <Alert message={error} type="error" onClose={() => setError(null)} />}
+        {message && <Alert message={message} type="success" onClose={() => setMessage(null)} />}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {courses.length > 0 ? (
-              courses.slice(0, 3).map((course) => (
-                <div
-                  key={course.course_id}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-2xl"
-                >
-                  {/* Course Image */}
-                  <div className="overflow-hidden">
-                    <img
-                      src={
-                        course.image_url
-                          ? `${SERVER_BASE_URL}${course.image_url}`
-                          : "placeholder_image_url"
-                      }
-                      alt={course.course_name}
-                      className="w-full h-56 object-cover transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
-
-                  {/* Course Content */}
-                  <div className="p-6">
-                    <h3 className="text-2xl text-center font-semibold text-gray-900 mb-2">
-                      {course.course_name}
-                    </h3>
-                    <p className="text-gray-600 text-center mb-4 text-sm line-clamp-3">
-                      {course.description}
-                    </p>
-                  </div>
-                </div>
-              ))
+        {showForm ? (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10 w-full max-w-4xl mx-auto">
+            <CourseForm course={editingCourse} onSubmit={handleFormSubmit} onCancel={handleCancel} isSaving={isSaving} teachers={teachers} />
+          </div>
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {loading ? (
+              <div className="p-16 text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
+              </div>
+            ) : courses.length > 0 ? (
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Image</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Course Title & Level</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Main Teacher</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Class Schedules</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {courses.map((course) => (
+                      <tr key={course.course_id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-5">
+                          {course.image_url ? (
+                            <img src={`${SERVER_ROOT_URL}${course.image_url}`} alt={course.course_name} className="w-14 h-14 rounded-lg object-cover shadow-md border border-gray-200" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-lg bg-gray-200 flex items-center justify-center text-xs text-gray-500 text-center leading-none p-2 font-semibold border-2 border-dashed border-gray-400">No Image</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-sm font-bold text-slate-800">
+                          {course.course_name}
+                          <span className={`block text-xs font-medium mt-1 p-1 px-2 rounded-full w-fit ${course.level === "Advanced" ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-green-100 text-green-800 border border-green-200"}`}>{course.level}</span>
+                        </td>
+                        <td className="px-6 py-5 text-sm text-slate-700 font-medium">{course.teacher_name || "N/A"}</td>
+                        <td className="px-6 py-5 text-sm text-slate-500">
+                          {course.schedules && course.schedules.length > 0 ? (
+                            <div className="flex flex-wrap gap-2">
+                              {course.schedules.map((s, i) => (
+                                <span key={i} className="bg-indigo-100 text-indigo-700 text-xs font-medium px-3 py-1 rounded-full shadow-sm border border-indigo-200">{formatSchedule(s)}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <span className="text-xs font-semibold text-red-600 bg-red-100 p-1 px-2 rounded-full border border-red-300">No Schedules Set</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex justify-end gap-1.5">
+                            <button onClick={() => { setEditingCourse(course); window.scrollTo({ top: 0, behavior: "smooth" }); }} className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all" title="Edit">
+                              <LucideIcon><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></LucideIcon>
+                            </button>
+                            <button onClick={() => handleDelete(course.course_id)} className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all" title="Delete">
+                              <LucideIcon><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></LucideIcon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
             ) : (
-              <div className="lg:col-span-3 text-center p-8 bg-indigo-700 rounded-xl shadow-lg">
-                <p className="text-lg font-sans text-indigo-100">
-                  No courses available yet.
-                </p>
+              <div className="p-16 md:p-24 text-center">
+                <div className="text-5xl md:text-6xl mb-4 grayscale opacity-50">📚</div>
+                <h3 className="text-lg md:text-xl font-bold text-slate-800">No Courses</h3>
+                <p className="text-slate-400 text-sm mt-1">No courses found in the database.</p>
               </div>
             )}
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

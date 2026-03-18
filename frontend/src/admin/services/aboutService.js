@@ -177,7 +177,11 @@ export const createProgram = async (data) => {
     
     formData.append('program_date', data.program_date || '');
     formData.append('title', data.title || '');
+    formData.append('slug', data.slug || '');
     formData.append('description', data.description || '');
+    formData.append('seo_title', data.seo_title || '');
+    formData.append('seo_description', data.seo_description || '');
+    formData.append('seo_keywords', data.seo_keywords || '');
     
     if (data.image_file) {
         formData.append('image_url', data.image_file);
@@ -200,7 +204,11 @@ export const updateProgram = async (id, data) => {
     
     formData.append('program_date', data.program_date || '');
     formData.append('title', data.title || '');
+    formData.append('slug', data.slug || '');
     formData.append('description', data.description || '');
+    formData.append('seo_title', data.seo_title || '');
+    formData.append('seo_description', data.seo_description || '');
+    formData.append('seo_keywords', data.seo_keywords || '');
     
     if (data.image_file) {
         formData.append('image_url', data.image_file);

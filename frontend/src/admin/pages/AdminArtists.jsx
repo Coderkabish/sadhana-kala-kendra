@@ -1,72 +1,46 @@
 import React, { useState, useEffect, useCallback } from "react";
-import axios from "axios";
-import api, { SERVER_ROOT_URL } from "../services/api";
+import { SERVER_ROOT_URL } from "../services/api";
 import {
   getAllArtists,
   createArtist,
   updateArtist,
   deleteArtist,
-} from "../services/artistsService"; // Note: Service functions updated to handle FormData
+} from "../services/artistsService";
 
-// --- Shared Components ---
+/** * PROFESSIONAL UI UTILS */
+const LucideIcon = ({ children }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="mr-2">
+    {children}
+  </svg>
+);
 
-// Component for displaying temporary messages
 const Alert = ({ message, type, onClose }) => (
-  <div
-    className={`p-4 rounded-lg font-roboto mb-4 ${
-      type === "error"
-        ? "bg-red-100 text-red-800 border border-red-400"
-        : type === "success"
-        ? "bg-green-100 text-green-800 border border-green-400"
-        : "bg-blue-100 text-blue-800 border border-blue-400"
-    }`}
-  >
-    {message}
-    <button onClick={onClose} className="float-right font-bold ml-4">
-      ×
-    </button>
+  <div className={`flex items-center justify-between p-4 mb-6 rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
+    type === "error" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"
+  }`}>
+    <div className="flex items-center font-medium">
+      {type === "error" ? "⚠️" : "✅"} <span className="ml-3">{message}</span>
+    </div>
+    <button onClick={onClose} className="hover:opacity-70 transition-opacity text-xl">&times;</button>
   </div>
 );
 
-// --- Artist Form Component ---
-
-// Added serverRootUrl prop
-const ArtistForm = ({
-  artist,
-  onSubmit,
-  onCancel,
-  isSaving,
-  serverRootUrl,
-}) => {
+/** * COMPONENT: ArtistForm */
+const ArtistForm = ({ artist, onSubmit, onCancel, isSaving }) => {
   const [formData, setFormData] = useState({
     full_name: artist?.full_name || "",
+    slug: artist?.slug || "",
     bio: artist?.bio || "",
+    seo_title: artist?.seo_title || "",
+    seo_description: artist?.seo_description || "",
+    seo_keywords: artist?.seo_keywords || "",
   });
-
-  // State to hold the selected file object
   const [profileImageFile, setProfileImageFile] = useState(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState(
+    artist?.profile_image ? `${SERVER_ROOT_URL}${artist.profile_image}` : ""
+  );
 
-  // Calculate initial URL using the passed prop
-  const initialImageUrl = artist?.profile_image
-    ? serverRootUrl + artist.profile_image
-    : "";
-  const [imagePreviewUrl, setImagePreviewUrl] = useState(initialImageUrl);
-
-  // Reset URL preview when component mounts/unmounts or artist changes
-  useEffect(() => {
-    // Recalculate preview URL when a new artist is selected for editing
-    setImagePreviewUrl(
-      artist?.profile_image ? serverRootUrl + artist.profile_image : ""
-    );
-    setProfileImageFile(null); // Clear file input when switching artists
-
-    return () => {
-      // Cleanup function for local file URL preview
-      if (profileImageFile) {
-        URL.revokeObjectURL(imagePreviewUrl);
-      }
-    };
-  }, [artist, serverRootUrl]);
+  const isNew = !artist || !artist.artist_id;
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -75,143 +49,122 @@ const ArtistForm = ({
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
-    setProfileImageFile(file);
-
     if (file) {
-      // Create a local URL for file preview
-      const localUrl = URL.createObjectURL(file);
-      setImagePreviewUrl(localUrl);
-    } else {
-      // If file is cleared, revert to existing image (if editing) or empty string
-      setImagePreviewUrl(
-        artist?.profile_image ? serverRootUrl + artist.profile_image : ""
-      );
+      setProfileImageFile(file);
+      setImagePreviewUrl(URL.createObjectURL(file));
     }
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Pass both form data and the file object to the parent for FormData construction
-    onSubmit({ ...formData, profileImageFile });
-  };
-
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white p-6 md:p-8 rounded-lg shadow-xl border border-gray-100 font-roboto"
-    >
-      <h3 className="text-xl font-playfair font-bold mb-6 text-gray-800">
-        {artist?.artist_id ? "Edit Artist" : "Add New Artist"}
-      </h3>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit({ ...formData, profileImageFile }); }} 
+      className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10 transition-all">
+      <div className="bg-slate-50 border-b border-slate-200 px-8 py-4 flex justify-between items-center">
+        <h3 className="text-lg font-bold text-slate-800">
+          {isNew ? "✨ Register New Artist" : "📝 Edit Artist Profile"}
+        </h3>
+        <span className="text-xs font-bold uppercase tracking-widest text-slate-400">Step 1 of 1</span>
+      </div>
 
-      <div className="grid grid-cols-1 gap-4">
-        {/* Full Name */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Full Name
-          </label>
-          <input
-            type="text"
-            name="full_name"
-            value={formData.full_name}
-            onChange={handleChange}
-            required
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-          />
+      <div className="p-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Left: Profile Photo Upload */}
+        <div className="lg:col-span-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+           <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+              {imagePreviewUrl ? (
+                <img src={imagePreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+              )}
+           </div>
+           <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+             {isNew ? "Upload Photo" : "Change Photo"}
+             <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
+           </label>
+           <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
         </div>
 
-        {/* Profile Image File Input (REDESIGNED) */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Profile Image
-          </label>
-          <div className="flex items-center space-x-4">
-            {/* Custom styled file input button */}
-            <label
-              htmlFor="profile_image_upload"
-              className="cursor-pointer bg-indigo-600 text-white font-medium py-2 px-4 rounded-md shadow-sm hover:bg-indigo-700 transition duration-150"
-            >
-              Choose File
-            </label>
-            {/* Hidden native input */}
+        {/* Right: Text Fields */}
+        <div className="lg:col-span-8 space-y-5">
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Artist Full Name</label>
             <input
-              id="profile_image_upload"
-              type="file"
-              name="profile_image"
-              onChange={handleFileChange}
-              accept=".png,.jpg,.jpeg,.webp"
-              className="hidden"
+              type="text"
+              name="full_name"
+              placeholder="e.g. Ramesh Chen"
+              value={formData.full_name}
+              onChange={handleChange}
+              required
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
             />
-            {/* Status text */}
-            <span className="text-gray-500 text-sm">
-              {profileImageFile?.name ||
-                (artist?.profile_image && !profileImageFile
-                  ? "Existing file chosen"
-                  : "No file chosen")}
-            </span>
           </div>
-          <p className="mt-1 text-xs text-gray-500">
-            Only .png, .jpg, .jpeg, .webp files are allowed.
-          </p>
-
-          {/* Image Preview */}
-          {imagePreviewUrl && (
-            <div className="mt-3 p-2 border border-gray-200 rounded-md">
-              <h4 className="text-xs font-semibold text-gray-600 mb-1">
-                Preview:
-              </h4>
-              <img
-                src={imagePreviewUrl}
-                alt="Profile Preview"
-                className="w-16 h-16 object-cover rounded-full border border-gray-300"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Bio */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700">
-            Bio / Description
-          </label>
-          <textarea
-            name="bio"
-            value={formData.bio}
-            onChange={handleChange}
-            rows="4"
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
-          ></textarea>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Bio / Professional Background</label>
+            <textarea
+              name="bio"
+              placeholder="Describe the artist's style and experience..."
+              value={formData.bio}
+              onChange={handleChange}
+              rows={4}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">Slug (Optional)</label>
+            <input
+              type="text"
+              name="slug"
+              placeholder="artist-name"
+              value={formData.slug}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">SEO Title</label>
+            <input
+              type="text"
+              name="seo_title"
+              placeholder="SEO title for artist page"
+              value={formData.seo_title}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">SEO Description</label>
+            <textarea
+              name="seo_description"
+              placeholder="Short SEO description"
+              value={formData.seo_description}
+              onChange={handleChange}
+              rows={3}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-slate-500 uppercase mb-2">SEO Keywords</label>
+            <input
+              type="text"
+              name="seo_keywords"
+              placeholder="artist, music, performance"
+              value={formData.seo_keywords}
+              onChange={handleChange}
+              className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none"
+            />
+          </div>
         </div>
       </div>
 
-      <div className="mt-6 flex justify-end space-x-3 font-inter">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSaving}
-          className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-        >
-          Cancel
+      <div className="bg-slate-50 px-8 py-4 flex justify-end gap-3">
+        <button type="button" onClick={onCancel} className="px-6 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-200 transition">
+          Discard
         </button>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className={`px-5 py-2 rounded-md text-white font-semibold ${
-            isSaving ? "bg-indigo-300" : "bg-indigo-600 hover:bg-indigo-700"
-          }`}
-        >
-          {isSaving
-            ? "Saving..."
-            : artist?.artist_id
-            ? "Save Changes"
-            : "Add Artist"}
+        <button type="submit" disabled={isSaving} className="px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:-translate-y-0.5 active:translate-y-0 transition-all disabled:opacity-50">
+          {isSaving ? "Processing..." : isNew ? "Create Profile" : "Save Changes"}
         </button>
       </div>
     </form>
   );
 };
-
-// --- Main AdminArtist Component ---
 
 export default function AdminArtist() {
   const [artists, setArtists] = useState([]);
@@ -221,285 +174,191 @@ export default function AdminArtist() {
   const [message, setMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Use centralized SERVER_ROOT_URL from api.js
-  const serverRootUrl = SERVER_ROOT_URL;
-
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const data = await getAllArtists();
       setArtists(data);
     } catch (err) {
-      setError("Failed to fetch artists data. Please check connection.");
-      console.error(err);
+      setError("Failed to synchronize artist database.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleFormSubmit = async ({ profileImageFile, ...data }) => {
     setIsSaving(true);
     setError(null);
-    setMessage(null);
-
-    // 1. Construct FormData for file upload
+    
     const formData = new FormData();
     formData.append("full_name", data.full_name);
     formData.append("bio", data.bio || "");
-
-    // 2. Append the file only if a new file is selected
-    if (profileImageFile) {
-      // 'profile_image' must match the expected field name in multer/backend
-      formData.append("profile_image", profileImageFile);
-    }
+    formData.append("slug", data.slug || "");
+    formData.append("seo_title", data.seo_title || "");
+    formData.append("seo_description", data.seo_description || "");
+    formData.append("seo_keywords", data.seo_keywords || "");
+    if (profileImageFile) formData.append("profile_image", profileImageFile);
 
     try {
       if (editingArtist?.artist_id) {
-        // For updates, we send FormData. Backend must be smart enough to keep old image if 'profile_image' is missing.
         await updateArtist(editingArtist.artist_id, formData);
-        setMessage("Artist updated successfully!");
+        setMessage("Artist profile updated.");
       } else {
-        // For creation
         await createArtist(formData);
-        setMessage("Artist created successfully!");
+        setMessage("New artist added successfully.");
       }
-
-      setEditingArtist(null); // Exit form view
-      fetchData(); // Refresh list
+      setEditingArtist(null);
+      fetchData();
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "An unknown error occurred while saving the artist.";
-      setError(errorMsg);
+      setError(err.response?.data?.message || "Operation failed.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this artist?")) return;
-
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
+    if (!window.confirm("Permanent Deletion? This cannot be undone.")) return;
     try {
       await deleteArtist(id);
-      setMessage("Artist deleted successfully.");
-      fetchData(); // Refresh list
+      setMessage("Artist record removed.");
+      fetchData();
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to delete artist.";
-      setError(errorMsg);
-      setLoading(false);
+      setError("Delete operation failed.");
     }
   };
 
-  const handleCancel = () => {
-    setEditingArtist(null);
-    setError(null);
-    setMessage(null);
-  };
-
-  const showForm = editingArtist !== null;
-
   return (
-    <div className="container mx-auto p-4 md:p-8 lg:p-12 font-sans">
-      {/* Page Title */}
-      <h1 className="text-4xl lg:text-3xl font-playfair font-extrabold text-[#0f0f50] mb-8 border-b-4 border-indigo-300 pb-4 flex items-center">
-        Manage Artists
-      </h1>
-
-      {/* Alerts */}
-      <div className="mb-6">
-        {error && (
-          <Alert message={error} type="error" onClose={() => setError(null)} />
-        )}
-        {message && (
-          <Alert
-            message={message}
-            type="success"
-            onClose={() => setMessage(null)}
-          />
-        )}
+    <div className="min-h-screen bg-[#f8fafc] pb-20 text-slate-900">
+      {/* HEADER SECTION */}
+      <div className="bg-white border-b border-slate-200 mb-8">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-black tracking-tight text-slate-900">Artist Directory</h1>
+              <p className="text-slate-500 mt-1">Manage and curate the roster of featured creative talents.</p>
+            </div>
+            {!editingArtist && (
+              <button 
+                onClick={() => setEditingArtist({})}
+                className="inline-flex items-center justify-center px-6 py-3 bg-indigo-600 text-white font-bold rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all hover:scale-[1.02]"
+              >
+                <LucideIcon><path d="M12 5v14M5 12h14" /></LucideIcon>
+                Register New Artist
+              </button>
+            )}
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Total Artists</span>
+                <p className="text-2xl font-black text-slate-800">{artists.length}</p>
+            </div>
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Status</span>
+                <p className="text-2xl font-black text-emerald-500 underline decoration-emerald-200">Live</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      {/* Form Area */}
-      {showForm && (
-        <div className="mb-8">
-          <ArtistForm
-            artist={editingArtist?.artist_id ? editingArtist : null}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCancel}
-            isSaving={isSaving}
-            serverRootUrl={SERVER_ROOT_URL}
+      <div className="container mx-auto px-6">
+        {error && <Alert message={error} type="error" onClose={() => setError(null)} />}
+        {message && <Alert message={message} type="success" onClose={() => setMessage(null)} />}
+
+        {editingArtist ? (
+          <ArtistForm 
+            artist={editingArtist.artist_id ? editingArtist : null} 
+            onSubmit={handleFormSubmit} 
+            onCancel={() => setEditingArtist(null)} 
+            isSaving={isSaving} 
           />
-        </div>
-      )}
-
-      {/* Add Artist Button */}
-      {!showForm && (
-        <button
-          onClick={() => {
-            setEditingArtist({});
-            window.scrollTo({ top: 0, behavior: "smooth" });
-          }}
-          className="mb-8 px-8 py-3 text-lg font-sans text-white font-semibold 
-                       rounded-xl shadow-xl bg-indigo-600 
-                       hover:bg-indigo-700 hover:scale-[1.02] transition"
-        >
-          + Add New Artist
-        </button>
-      )}
-
-      {/* Loading State */}
-      {loading && !showForm && (
-        <div className="text-center py-10 font-roboto text-lg text-gray-600">
-          Loading artists data...
-        </div>
-      )}
-
-      {/* Data Table */}
-      {!loading &&
-        !error &&
-        !showForm &&
-        (artists.length > 0 ? (
-          <div className="overflow-x-auto bg-white shadow-2xl rounded-2xl p-6 border border-gray-200 mt-6">
-            <table className="min-w-full bg-white font-roboto">
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider">
-                    Profile
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider">
-                    Full Name
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-sans font-bold text-gray-700 uppercase tracking-wider hidden md:table-cell">
-                    Bio (Snippet)
-                  </th>
-                  <th className="px-4 py-3 text-center text-xs font-sans font-bold text-gray-700 uppercase tracking-wider">
-                    Actions
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-gray-200">
-                {artists.map((artist) => (
-                  <tr
-                    key={artist.artist_id}
-                    className="hover:bg-indigo-50 transition duration-150"
-                  >
-                    {/* Profile Image */}
-                    <td className="px-4 py-3">
-                      {artist.profile_image ? (
-                        <img
-                          src={`${SERVER_ROOT_URL}${artist.profile_image}`}
-                          alt={artist.full_name}
-                          className="w-12 h-12 rounded-full object-cover shadow-md border border-gray-200"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center text-gray-600 text-sm font-bold">
-                          N/A
-                        </div>
-                      )}
-                    </td>
-
-                    {/* Name */}
-                    <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                      {artist.full_name}
-                    </td>
-
-                    {/* Bio */}
-                    <td className="px-4 py-3 text-sm text-gray-500 hidden md:table-cell">
-                      {artist.bio
-                        ? `${artist.bio.substring(0, 50)}...`
-                        : "No bio provided"}
-                    </td>
-
-                    {/* Actions */}
-                    <td className="px-4 py-3 text-center text-sm font-medium space-x-3">
-                      <button
-                        onClick={() => setEditingArtist(artist)}
-                        className="text-indigo-600 hover:text-indigo-900 px-3 py-2 rounded-lg 
-                                                   hover:bg-indigo-100 transition duration-150 font-semibold"
-                      >
-                        Edit
-                      </button>
-
-                      <button
-                        onClick={() => handleDelete(artist.artist_id)}
-                        className="text-red-600 hover:text-red-900 px-3 py-2 rounded-lg 
-                                                   hover:bg-red-100 transition duration-150 font-semibold"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
         ) : (
-          <p className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 font-roboto">
-            No artists found. Click 'Add New Artist' to create one.
-          </p>
-        ))}
-
-      {/* PUBLIC WEBSITE PREVIEW SECTION (unchanged) */}
-      {/* DO NOT TOUCH — AS REQUESTED */}
-      <div className="bg-indigo-900 py-12 px-4 sm:px-6 lg:px-8 border-t-8 border-indigo-600 mt-16">
-        <div className="container mx-auto">
-          <h2 className="text-4xl font-playfair font-bold text-white mb-10 text-center">
-            Public Website Preview: Featured Artists
-          </h2>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 max-w-7xl mx-auto">
-            {artists.length > 0 ? (
-              artists.slice(0, 3).map((artist) => (
-                <div
-                  key={artist.artist_id}
-                  className="bg-white rounded-2xl shadow-lg overflow-hidden transition-transform transform hover:-translate-y-1 hover:shadow-2xl"
-                >
-                  {/* Image */}
-                  <div className="overflow-hidden">
-                    <img
-                      src={
-                        artist.profile_image
-                          ? `${SERVER_ROOT_URL}${artist.profile_image}`
-                          : "placeholder_image_url"
-                      }
-                      alt={artist.full_name}
-                      className="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-105"
-                    />
-                  </div>
-
-                  {/* Content */}
-                  <div className="p-6">
-                    <h3 className="text-xl text-center font-semibold text-[#0f0f50] mb-2">
-                      {artist.full_name}
-                    </h3>
-                    <p className="text-gray-700 text-center mb-4 text-sm line-clamp-3">
-                      {artist.bio || "No bio available."}
-                    </p>
-                  </div>
-                </div>
-              ))
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {loading ? (
+              <div className="p-20 text-center">
+                <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-slate-500 font-medium">Synchronizing artist data...</p>
+              </div>
+            ) : artists.length > 0 ? (
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-200">
+                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest">Professional</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest hidden md:table-cell">Biography Snippet</th>
+                    <th className="px-6 py-4 text-xs font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {artists.map((a) => (
+                    <tr key={a.artist_id} className="hover:bg-slate-50/80 transition-colors group">
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-4">
+                          <img 
+                            src={a.profile_image ? `${SERVER_ROOT_URL}${a.profile_image}` : "https://via.placeholder.com/150"} 
+                            className="w-12 h-12 rounded-xl object-cover shadow-sm ring-2 ring-white" 
+                            alt="" 
+                          />
+                          <div>
+                            <p className="font-bold text-slate-800 group-hover:text-indigo-600 transition-colors">{a.full_name}</p>
+                            <p className="text-xs text-slate-400 md:hidden line-clamp-1">{a.bio || "No bio"}</p>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 hidden md:table-cell">
+                        <p className="text-sm text-slate-500 line-clamp-1 max-w-xs italic">
+                          {a.bio || "Not available"}
+                        </p>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex justify-end gap-2">
+                          <button onClick={() => setEditingArtist(a)} className="p-2 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-all">
+                            <LucideIcon><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></LucideIcon>
+                          </button>
+                          <button onClick={() => handleDelete(a.artist_id)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all">
+                            <LucideIcon><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></LucideIcon>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             ) : (
-              <div className="lg:col-span-3 text-center p-8 bg-indigo-700 rounded-xl shadow-lg">
-                <p className="text-lg text-indigo-100">
-                  No artists available yet.
-                </p>
+              <div className="p-20 text-center">
+                <div className="text-5xl mb-4">🎨</div>
+                <h3 className="text-xl font-bold text-slate-800">No artists found</h3>
+                <p className="text-slate-500">Your collection is currently empty.</p>
               </div>
             )}
           </div>
+        )}
+      </div>
+
+      {/* PUBLIC PREVIEW SECTION */}
+      <div className="container mx-auto px-6 mt-16">
+        <div className="bg-slate-900 rounded-[2.5rem] p-10 lg:p-16 overflow-hidden relative">
+          <div className="relative z-10">
+            <h2 className="text-3xl font-black text-white mb-10 text-center">Live Preview: Artist Cards</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+              {artists.slice(0, 3).map((artist) => (
+                <div key={artist.artist_id} className="bg-white rounded-3xl overflow-hidden shadow-2xl">
+                  <img
+                    src={artist.profile_image ? `${SERVER_ROOT_URL}${artist.profile_image}` : "https://via.placeholder.com/300"}
+                    className="w-full h-64 object-cover"
+                    alt={artist.full_name}
+                  />
+                  <div className="p-6 text-center">
+                    <h3 className="text-xl font-bold text-slate-900 mb-2">{artist.full_name}</h3>
+                    <p className="text-slate-500 text-sm line-clamp-2">{artist.bio || "Featured artist profile."}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+          {/* Decorative Background Blur */}
+          <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 blur-[100px] rounded-full"></div>
         </div>
       </div>
     </div>

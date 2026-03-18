@@ -1,22 +1,25 @@
+
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  getUpcomingEvents,
-  getPastEvents,
-} from "../admin/services/eventsService";
+import { useNavigate } from "react-router-dom";
+import { getUpcomingEvents, getPastEvents } from "../admin/services/eventsService";
+import { getAllNews } from "../admin/services/newsService";
+
 
 const Events = () => {
+  const navigate = useNavigate();
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState("upcoming");
+  const [news, setNews] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(null);
 
   const fetchEvents = useCallback(async (tab) => {
     setLoading(true);
     setError(null);
-
     try {
       let data;
-
       if (tab === "upcoming") {
         data = await getUpcomingEvents();
         data.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
@@ -24,20 +27,38 @@ const Events = () => {
         data = await getPastEvents();
         data.sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
       }
-
       setEvents(data);
     } catch (err) {
-      console.error("Failed to fetch events:", err);
       setError(`Failed to load ${tab} events. Please try again later.`);
     } finally {
       setLoading(false);
     }
   }, []);
 
+  const fetchNews = useCallback(async () => {
+    setNewsLoading(true);
+    setNewsError(null);
+    try {
+      const data = await getAllNews();
+      setNews(data);
+    } catch (err) {
+      setNewsError("Failed to load news. Please try again later.");
+    } finally {
+      setNewsLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     window.scrollTo(0, 0);
+  }, []);
+
+  useEffect(() => {
     fetchEvents(activeTab);
   }, [activeTab, fetchEvents]);
+
+  useEffect(() => {
+    fetchNews();
+  }, [fetchNews]);
 
   const formatDateDisplay = (dateString) => {
     if (!dateString) return "TBD";
@@ -109,6 +130,15 @@ const Events = () => {
         <p className="mt-4 text-xs text-gray-500 italic">
           Organized by: {event.organized_by || "Our School"}
         </p>
+        {event.slug ? (
+          <button
+            type="button"
+            onClick={() => navigate(`/events/${event.slug}`)}
+            className="mt-4 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
+          >
+            View Details
+          </button>
+        ) : null}
       </div>
     </div>
   );
@@ -136,18 +166,88 @@ const Events = () => {
 
   return (
     <section className="py-16 md:py-20 bg-gray-50">
+      {/* News Section */}
+      <div className="max-w-7xl mx-auto mb-20 px-4">
+        <div className="flex flex-col items-center justify-center mb-10 border-b border-gray-200 pb-8">
+          <div className="text-center">
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">
+              Latest <span className="text-red-600 font-['Playfair_Display']">Updates</span>
+            </h2>
+            <p className="text-base sm:text-lg md:text-xl text-gray-600 font-['Roboto'] max-w-2xl mx-auto">
+              Stay updated with the latest happenings at our Kala Kendra.
+            </p>
+          </div>
+        </div>
+
+        {newsLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {[1, 2, 3].map((n) => (
+              <div key={n} className="animate-pulse bg-white rounded-2xl h-80 shadow-sm"></div>
+            ))}
+          </div>
+        ) : newsError ? (
+          <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-100 text-center">
+            {newsError}
+          </div>
+        ) : news.length === 0 ? (
+          <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-dashed border-gray-300">
+            <p className="text-gray-500 italic">No news updates available at this time.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {news.map((item) => {
+              const newsDate = item.news_date ? new Date(item.news_date) : null;
+              return (
+                <article
+                  key={item.news_id}
+                  onClick={() => navigate(`/news/${item.slug || item.news_id}`)}
+                  className="group bg-white rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 border border-gray-100 flex flex-col overflow-hidden cursor-pointer"
+                >
+                  <div className="relative h-52 overflow-hidden bg-gray-100 flex items-center justify-center">
+                    {item.image_url ? (
+                      <img
+                        src={item.image_url.startsWith("http") ? item.image_url : ((import.meta.env.VITE_API_BASE_URL ? import.meta.env.VITE_API_BASE_URL.replace(/\/api\/?$/, "") : "") + item.image_url)}
+                        alt={item.title}
+                        className="w-full h-full object-contain transition-transform duration-500 group-hover:scale-110 bg-gray-100"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="text-sm text-gray-400 font-medium">No image</span>
+                    )}
+                    {newsDate && (
+                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-lg text-center shadow-md">
+                        <span className="block text-xs font-bold text-red-600 uppercase tracking-wider">
+                          {newsDate.toLocaleString("default", { month: "short" })}
+                        </span>
+                        <span className="block text-lg font-black text-indigo-900 leading-none">
+                          {newsDate.getDate()}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="p-6 flex-1 flex flex-col">
+                    <h4 className="text-xl font-bold text-indigo-950 mb-3 group-hover:text-red-600 transition-colors line-clamp-2 font-['Playfair_Display']">
+                      {item.title}
+                    </h4>
+                    <p className="text-gray-600 text-sm leading-relaxed mb-4 line-clamp-3 font-['Roboto']">
+                      {item.content}
+                    </p>
+                  </div>
+                </article>
+              );
+            })}
+          </div>
+        )}
+      </div>
+      {/* Events Section */}
       <div className="text-center max-w-3xl mx-auto mb-12 md:mb-16 px-4">
         <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">
-          Event{" "}
-          <span className="text-red-600 font-['Playfair_Display']">
-            Timeline
-          </span>
+          Event <span className="text-red-600 font-['Playfair_Display']">Timeline</span>
         </h2>
-
         <p className="text-base sm:text-lg md:text-xl text-gray-600 font-['Roboto']">
           Explore our upcoming plans and look back at our history.
         </p>
-
         <div className="mt-8 border-b border-gray-200 inline-block">
           <div className="flex space-x-8 justify-center">
             <button
@@ -160,7 +260,6 @@ const Events = () => {
             >
               Upcoming Events
             </button>
-
             <button
               onClick={() => setActiveTab("past")}
               className={`pb-2 font-bold transition-colors text-lg ${
@@ -174,7 +273,6 @@ const Events = () => {
           </div>
         </div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4">
         {loading && (
           <div className="min-h-screen flex items-center justify-center bg-white">
@@ -186,26 +284,23 @@ const Events = () => {
             </div>
           </div>
         )}
-
         {error && (
           <div className="p-4 rounded-lg bg-red-100 text-red-800 border border-red-400 text-center">
             {error}
           </div>
         )}
-
         {!loading && !error && events.length === 0 && (
-          <div className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-            <h3 className="text-xl font-semibold text-gray-700 font-['Playfair_Display']">
-              No {activeTab === "upcoming" ? "Upcoming" : "Past"} Events Found
-            </h3>
-            <p className="mt-2 text-gray-500 font-['Roboto']">
-              {activeTab === "upcoming"
-                ? "Check back soon for new announcements!"
-                : "This list will be updated as events conclude."}
-            </p>
-          </div>
-        )}
-
+          <div className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
+            <h3 className="text-xl font-semibold text-gray-700 font-['Playfair_Display']">
+              No {activeTab === "upcoming" ? "Upcoming" : "Past"} Events Found
+            </h3>
+            <p className="mt-2 text-gray-500 font-['Roboto']">
+              {activeTab === "upcoming"
+                ? "Check back soon for new announcements!"
+                : "This list will be updated as events conclude."}
+            </p>
+          </div>
+        )}
         {!loading && !error && events.length > 0 && (
           <>
             {activeTab === "upcoming" && (
@@ -215,7 +310,6 @@ const Events = () => {
                 ))}
               </div>
             )}
-
             {activeTab === "past" && (
               <div className="bg-white rounded-xl shadow-lg divide-y divide-gray-100">
                 {events.map((event) => (

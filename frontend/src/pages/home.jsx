@@ -7,6 +7,7 @@ import { heroImages, logo, aboutVideo } from "../assets/assets";
 import { getAllArtists } from "../admin/services/artistsService";
 import { getAllCourses } from "../admin/services/coursesService";
 import { getAllTeachers } from "../admin/services/teachersService";
+import { getPublicOffers } from "../admin/services/offersService";
 // ⬅️ NEW: Import SERVER_ROOT_URL from your service file (assuming all services import 'api')
 import { SERVER_ROOT_URL } from "../admin/services/api";
 
@@ -15,6 +16,7 @@ const Home = () => {
   const [artistsList, setArtistsList] = useState([]);
   const [coursesList, setCoursesList] = useState([]);
   const [teachersList, setTeachersList] = useState([]);
+  const [offersList, setOffersList] = useState([]);
   const [loading, setLoading] = useState(true);
 
   // Utility to construct image URL
@@ -33,18 +35,28 @@ const Home = () => {
     return `${SERVER_ROOT_URL}${fixed}`;
   };
 
+  const normalizeCtaUrl = (rawUrl) => {
+    if (!rawUrl) return "";
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return "";
+    if (/^https?:\/\//i.test(trimmed)) return trimmed;
+    return `https://${trimmed}`;
+  };
+
   // --- Data Fetching Logic (Unchanged) ---
   const fetchHomeData = useCallback(async () => {
     setLoading(true);
     try {
-      const [artistsData, coursesData, teachersData] = await Promise.all([
+      const [artistsData, coursesData, teachersData, offersData] = await Promise.all([
         getAllArtists(),
         getAllCourses(),
         getAllTeachers(),
+        getPublicOffers(3),
       ]);
       setArtistsList(artistsData);
       setCoursesList(coursesData);
       setTeachersList(teachersData);
+      setOffersList(Array.isArray(offersData) ? offersData.slice(0, 3) : []);
     } catch (error) {
       console.error(
         "Failed to fetch home data (artists/courses/teachers):",
@@ -60,7 +72,7 @@ const Home = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % heroImages.length);
-    }, 5000);
+    }, 15000);
     return () => clearInterval(interval);
   }, []);
 
@@ -88,17 +100,14 @@ const Home = () => {
     <div className="min-h-screen bg-gray-100 font-['Roboto']">
       {/* ================= HERO SECTION ================= */}
       <section className="relative h-[90vh] overflow-hidden">
-        {/* Fade Image Layer */}
-        {heroImages.map((img, index) => (
-          <div
-            key={index}
-            className={`absolute inset-0 bg-cover bg-center transition-opacity duration-1000 ease-in-out`}
-            style={{
-              backgroundImage: `url(${img})`,
-              opacity: index === currentIndex ? 1 : 0,
-            }}
-          ></div>
-        ))}
+        <img
+          key={heroImages[currentIndex]}
+          src={heroImages[currentIndex]}
+          alt="Sadhana Kala Kendra hero"
+          fetchpriority="high"
+          decoding="async"
+          className="absolute inset-0 w-full h-full object-cover transition-opacity duration-700 ease-in-out"
+        />
 
         {/* Dark Overlay */}
         <div className="absolute inset-0 bg-black/50"></div>
@@ -140,6 +149,7 @@ const Home = () => {
               <img
                 src={logo}
                 alt="Sadhana Kala Kendra Logo"
+                loading="lazy"
                 className="w-20 h-20 md:w-24 md:h-24 object-contain rounded-full shadow-lg p-2 bg-gray-50 border-4 border-red-500/20 transition-transform duration-300 hover:scale-105"
               />
 
@@ -191,12 +201,11 @@ const Home = () => {
             >
               <video
                 src={aboutVideo}
-                autoPlay
                 muted
-                loop
                 controls
                 playsInline
-                preload="auto"
+                preload="none"
+                poster={heroImages[0]}
                 className="
             w-full
             h-full
@@ -210,6 +219,90 @@ const Home = () => {
 
       {/* --- Horizontal Rule added for better visual separation --- */}
       <hr className="border-t border-gray-200" />
+
+      {/* ================= OFFERS SECTION ================= */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
+          <div className="text-center mb-14">
+            <h2 className="text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">
+              Latest <span className="text-red-600">Offers</span>
+            </h2>
+            <p className="text-gray-600 text-lg md:text-xl font-['Roboto']">
+              Top offers curated for current students and new applicants.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {offersList.length > 0 ? (
+              offersList.map((offer) => (
+                <div
+                  key={offer.offer_id}
+                  className="bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left"
+                >
+                  <div className="h-52 overflow-hidden bg-gray-100">
+                    {offer.image_url ? (
+                      <img
+                        src={getImageUrl(offer.image_url)}
+                        alt={offer.title}
+                        loading="lazy"
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                      />
+                    ) : (
+                      <div className="h-full flex items-center justify-center text-gray-400">No image</div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-2xl font-bold mb-1 text-[#191938] font-['Inter'] line-clamp-2">
+                      {offer.title}
+                    </h3>
+                    {offer.subtitle && (
+                      <p className="text-red-600 font-semibold mb-2 font-['Roboto']">{offer.subtitle}</p>
+                    )}
+                    <p className="text-gray-700 mb-4 font-['Roboto'] line-clamp-3">
+                      {offer.description}
+                    </p>
+                    {offer.slug ? (
+                      <Link
+                        to={`/offers/${offer.slug}`}
+                        className="inline-block mr-3 text-[#191938] font-semibold underline"
+                      >
+                        View Details
+                      </Link>
+                    ) : null}
+                    {offer.cta_link && (
+                      <a
+                        href={normalizeCtaUrl(offer.cta_link)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-block bg-[#191938] hover:bg-red-600 text-white font-semibold py-2 px-5 rounded-full transition-all duration-300"
+                      >
+                        {offer.cta_text || "Know More"}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <p className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
+                No active offers available right now.
+              </p>
+            )}
+          </div>
+
+          <div className="text-center mt-12">
+            <Link
+              to="/offers"
+              className="text-red-600 font-bold underline text-lg hover:text-red-800 transition duration-200 font-['Inter']"
+            >
+              See All Offers
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      {/* --- Horizontal Rule added for better visual separation --- */}
+      <hr className="border-t border-gray-200" />
+
       {/* ================= PRIDE SECTION (ARTISTS) ================= */}
       <section className="py-20 bg-red-50/25">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
@@ -236,6 +329,7 @@ const Home = () => {
                     <img
                       src={getImageUrl(artist.profile_image)}
                       alt={artist.full_name}
+                      loading="lazy"
                       className="w-full aspect-[4/3] object-cover object-top transition-transform duration-500 hover:scale-105"
                     />
                   </div>
@@ -304,6 +398,7 @@ const Home = () => {
                     <img
                       src={getImageUrl(course.image_url)}
                       alt={course.title}
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
                     />
                   </div>
@@ -371,6 +466,7 @@ const Home = () => {
                     <img
                       src={getImageUrl(teacher.profile_image)}
                       alt={teacher.full_name}
+                      loading="lazy"
                       className="w-full h-56 object-cover object-top transition-transform duration-500 hover:scale-105"
                     />
                   </div>

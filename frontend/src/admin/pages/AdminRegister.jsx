@@ -468,70 +468,79 @@ const AdminRegister = () => {
     activeTab === "Unread" ? unreadRegistrations : readRegistrations;
 
   return (
-    <div className="container mx-auto p-4 md:p-8 lg:p-12 font-sans">
-      <h1 className="text-4xl lg:text-3xl font-playfair font-extrabold text-[#0f0f50] mb-8 border-b-4 border-indigo-300 pb-4 flex items-center">
-        <span className="text-indigo-600"></span> Registration Dashboard
-      </h1>
-
-      {loading && (
-        <div className="p-8 text-center text-gray-500">Loading data...</div>
-      )}
-
-      {error && (
-        <div className="p-4 bg-red-100 text-red-700 rounded-xl border border-red-300 mb-6 font-medium">
-          {error}
+    <div className="min-h-screen bg-[#f8fafc] pb-10 text-slate-900">
+      <div className="bg-white border-b border-slate-200 mb-8">
+        <div className="container mx-auto px-6 py-8">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">Registration Console</h1>
+              <p className="text-slate-500 text-sm md:text-base mt-1">Manage all registrations and submissions.</p>
+            </div>
+          </div>
         </div>
-      )}
+      </div>
 
-      {!loading && (
-        <>
-          {/* --- 1. Summary Metrics --- */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Total Count */}
-            <MetricCard
-              icon={Icons.Users}
-              title="Total Registrations"
-              value={totalRegistrations}
-              color="text-teal-700"
-              bg="bg-white"
-            />
-            {/* Unread Count */}
-            <MetricCard
-              icon={Icons.Mail}
-              title="New Submissions"
-              value={unreadRegistrations.length}
-              color="text-red-700"
-              bg="bg-red-50"
-              isAttention={true}
-            />
-            {/* Read Count */}
-            <MetricCard
-              icon={Icons.MailOpen}
-              title="Reviewed Submissions"
-              value={readRegistrations.length}
-              color="text-gray-700"
-              bg="bg-white"
-            />
+      <div className="container mx-auto px-6">
+        {loading && (
+          <div className="p-8 text-center text-gray-500">Loading data...</div>
+        )}
+
+        {error && (
+          <div className="p-4 bg-red-100 text-red-700 rounded-xl border border-red-300 mb-6 font-medium">
+            {error}
           </div>
+        )}
 
-          {/* --- 2. Tabbed Interface for Tables --- */}
-          <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
-            <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
+        {!loading && (
+          <>
+            {/* --- 1. Summary Metrics --- */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+              {/* Total Count */}
+              <MetricCard
+                icon={Icons.Users}
+                title="Total Registrations"
+                value={totalRegistrations}
+                color="text-teal-700"
+                bg="bg-white"
+              />
+              {/* Unread Count */}
+              <MetricCard
+                icon={Icons.Mail}
+                title="New Submissions"
+                value={unreadRegistrations.length}
+                color="text-red-700"
+                bg="bg-red-50"
+                isAttention={true}
+              />
+              {/* Read Count */}
+              <MetricCard
+                icon={Icons.MailOpen}
+                title="Reviewed Submissions"
+                value={readRegistrations.length}
+                color="text-gray-700"
+                bg="bg-white"
+              />
+            </div>
 
-            {/* Render the Table based on activeTab */}
-            <RegistrationTable data={displayData} />
-          </div>
-        </>
-      )}
+            {/* --- 2. Tabbed Interface for Tables --- */}
+            <div className="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+              <TabNavigation activeTab={activeTab} setActiveTab={setActiveTab} />
 
-      {/* --- 3. Modal for Details --- */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-        title={`Registration Details: #${modalData?.registration_id}`}
-      >
-        {modalData && <RegistrationForm data={modalData} />}
-      </Modal>
+              {/* Render the Table based on activeTab */}
+              <RegistrationTable data={displayData} />
+            </div>
+          </>
+        )}
+
+        {/* --- 3. Modal for Details --- */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          title={`Registration Details: #${modalData?.registration_id}`}
+        >
+          {modalData && <RegistrationForm data={modalData} />}
+        </Modal>
+      </div>
     </div>
   );
 };

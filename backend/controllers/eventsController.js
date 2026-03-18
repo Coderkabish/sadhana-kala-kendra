@@ -1,5 +1,6 @@
 import EventsModel from "../models/eventsModel.js";
 import { logAdminAction } from "../utils/auditLogger.js";
+import { slugify } from "../utils/slug.js";
 class EventsController {
     static async getAll(req, res, next) {
         try {
@@ -21,7 +22,10 @@ class EventsController {
 
     static async getById(req, res, next) {
         try {
-            const event = await EventsModel.getById(req.params.id);
+            const slugOrId = req.params.slug;
+            const event = Number.isFinite(Number(slugOrId))
+                ? await EventsModel.getById(slugOrId)
+                : await EventsModel.getBySlug(slugOrId);
             if (event) {
                 res.json(event);
             } else {
@@ -34,7 +38,8 @@ class EventsController {
 
     static async create(req, res, next) {
         try {
-            const { event_name, description, event_date, event_time, venue, organized_by, category } = req.body;
+            const { event_name, description, event_date, event_time, venue, organized_by, category, slug, seo_title, seo_description, seo_keywords } = req.body;
+            const normalizedSlug = slugify(slug || event_name);
 
             if (!event_name) {
                 return res.status(400).json({ message: "Event name is required." });
@@ -47,12 +52,16 @@ class EventsController {
 
             const id = await EventsModel.create({ 
                 event_name, 
+                slug: normalizedSlug,
                 description, 
                 event_date, 
                 event_time, 
                 venue, 
                 organized_by,
-                category: category || 'upcoming'
+                category: category || 'upcoming',
+                seo_title,
+                seo_description,
+                seo_keywords,
             }); 
             await logAdminAction({
                 admin_id: req.admin.admin_id,
@@ -63,6 +72,9 @@ class EventsController {
             });
             res.status(201).json({ message: "Event created", id });
         } catch (err) {
+            if (err?.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             console.error("Error creating event:", err);
             next(err); 
         }
@@ -70,7 +82,8 @@ class EventsController {
 
     static async update(req, res, next) {
         try {
-            const { event_name, description, event_date, event_time, venue, organized_by, category } = req.body;
+            const { event_name, description, event_date, event_time, venue, organized_by, category, slug, seo_title, seo_description, seo_keywords } = req.body;
+            const normalizedSlug = slugify(slug || event_name);
 
             // Validate category if provided
             if (category && category !== 'upcoming' && category !== 'past') {
@@ -79,12 +92,16 @@ class EventsController {
 
             await EventsModel.update(req.params.id, { 
                 event_name, 
+                slug: normalizedSlug,
                 description, 
                 event_date, 
                 event_time, 
                 venue, 
                 organized_by,
-                category
+                category,
+                seo_title,
+                seo_description,
+                seo_keywords,
             });
             await logAdminAction({
                 admin_id: req.admin.admin_id,
@@ -95,6 +112,9 @@ class EventsController {
             });
             res.json({ message: "Event updated" });
         } catch (err) {
+            if (err?.code === "ER_DUP_ENTRY") {
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             console.error("Error updating event:", err);
             next(err);
         }

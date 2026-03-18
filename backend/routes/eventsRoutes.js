@@ -6,7 +6,7 @@ const router = express.Router();
 
 // PUBLIC ROUTES
 router.get("/", EventsController.getAll);
-router.get("/:id", EventsController.getById);
+router.get("/:slug", EventsController.getById);
 
 // ADMIN ROUTES (CRUD)
 router.post("/", adminAuth, EventsController.create);

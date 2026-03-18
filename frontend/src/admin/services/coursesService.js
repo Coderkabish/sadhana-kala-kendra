@@ -7,9 +7,13 @@ const createFormData = (data, isUpdate) => {
   const mainTeacherName = data.teacher_name || "";
 
   formData.append("title", data.title);
+  formData.append("slug", data.slug || "");
   formData.append("description", data.description || "");
   formData.append("level", data.level || "");
   formData.append("teacher_name", mainTeacherName);
+  formData.append("seo_title", data.seo_title || "");
+  formData.append("seo_description", data.seo_description || "");
+  formData.append("seo_keywords", data.seo_keywords || "");
 
   const processedSchedules = (data.schedules || []).map((schedule) => {
     let classDayValue = "";

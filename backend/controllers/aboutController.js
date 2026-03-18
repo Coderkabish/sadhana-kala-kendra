@@ -2,6 +2,7 @@ import AboutModel from "../models/aboutModel.js";
 import fs from "fs/promises";
 import path from "path";
 import { logAdminAction } from "../utils/auditLogger.js"; 
+import { slugify } from "../utils/slug.js";
 
 class AboutController {
     static async removeFile(filePath) {
@@ -241,9 +242,23 @@ class AboutController {
         }
     }
 
+    static async getProgramBySlug(req, res) {
+        try {
+            const program = await AboutModel.getProgramBySlug(req.params.slug);
+            if (!program) return res.status(404).json({ message: "Program not found." });
+            res.status(200).json(program);
+        } catch {
+            res.status(500).json({ message: "Failed to fetch program." });
+        }
+    }
+
     static async createProgram(req, res) {
         const image_url = AboutController.getImagePath(req);
-        const programData = { ...req.body, image_url };
+        const programData = {
+            ...req.body,
+            slug: slugify(req.body.slug || req.body.title),
+            image_url,
+        };
         try {
             const newId = await AboutModel.createProgram(programData);
 
@@ -257,6 +272,10 @@ class AboutController {
 
             res.status(201).json({ message: "Program created successfully.", program_id: newId, ...programData });
         } catch (error) {
+            if (error?.code === "ER_DUP_ENTRY") {
+                if (image_url) await AboutController.removeFile(image_url);
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             if (image_url) await AboutController.removeFile(image_url);
             res.status(500).json({ message: "Failed to create program." });
         }
@@ -265,7 +284,13 @@ class AboutController {
     static async updateProgram(req, res) {
         const { id } = req.params;
         const newImagePath = AboutController.getImagePath(req);
-        const updateData = { ...req.body, ...(newImagePath && { image_url: newImagePath }) };
+        const updateData = {
+            ...req.body,
+            ...(req.body.slug !== undefined || req.body.title !== undefined
+                ? { slug: slugify(req.body.slug || req.body.title) }
+                : {}),
+            ...(newImagePath && { image_url: newImagePath }),
+        };
         try {
             if (newImagePath) await AboutController.deleteOldProgramImage(id);
             await AboutModel.updateProgram(id, updateData);
@@ -280,6 +305,10 @@ class AboutController {
 
             res.status(200).json({ message: "Program updated successfully." });
         } catch (error) {
+            if (error?.code === "ER_DUP_ENTRY") {
+                if (newImagePath) await AboutController.removeFile(newImagePath);
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             if (newImagePath) await AboutController.removeFile(newImagePath);
             if (error.message.includes("not found")) return res.status(404).json({ message: error.message });
             res.status(500).json({ message: "Failed to update program." });

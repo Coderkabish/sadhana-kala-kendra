@@ -8,7 +8,7 @@ const router = express.Router();
 
 // PUBLIC ROUTES
 router.get("/", CoursesController.getAll);
-router.get("/:id", CoursesController.getById);
+router.get("/:slug", CoursesController.getById);
 
 // ADMIN ROUTES (CRUD) - 🔑 FIX: Corrected order (Upload BEFORE Auth)
 router.post("/", uploadMedia.single("image"), adminAuth, CoursesController.create);

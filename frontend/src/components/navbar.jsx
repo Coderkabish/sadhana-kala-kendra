@@ -24,6 +24,7 @@ const navItems = [
   { name: "Courses", to: "/courses" },
   { name: "Activities", to: "/activities" },
   { name: "Events", to: "/events" },
+  { name: "Offers", to: "/offers" },
   { name: "Gallery", to: "/gallery" },
   
 ];

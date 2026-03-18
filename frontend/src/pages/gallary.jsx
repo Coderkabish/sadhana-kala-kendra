@@ -76,6 +76,7 @@ const Gallery = () => {
                                 <img
                                     src={img}
                                     alt={getPhotoTitle(index)}
+                                    loading="lazy"
                                     className="w-full h-48 sm:h-56 md:h-64 object-cover transition-opacity duration-300 group-hover:opacity-85"
                                 />
                                 <div className="p-3 absolute inset-0 bg-red bg-opacity-30 flex items-end opacity-10 group-hover:opacity-100 transition-opacity">
@@ -135,6 +136,7 @@ const Gallery = () => {
                         <img
                             src={selectedMedia.src}
                             alt={selectedMedia.title || "Preview"}
+                            loading="lazy"
                             className="max-h-[85vh] max-w-[90vw] rounded-2xl shadow-2xl object-contain"
                         />
                         

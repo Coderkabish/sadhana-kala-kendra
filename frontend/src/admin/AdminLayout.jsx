@@ -17,6 +17,10 @@ const getIconForRoute = (path) => {
             return UserCircle; 
         case "/admin/events":
             return Calendar;
+        case "/admin/news":
+            return Image;
+        case "/admin/offers":
+            return Briefcase;
         case "/admin/gallery":
             return Image;
         case "/admin/teachers":
@@ -57,8 +61,11 @@ const AdminLayout = ({ onLogout, adminUsername = "Admin" }) => {
         { to: "/admin/register", label: "Registrations", icon: CheckSquare }, 
         { to: "/admin/courses", label: "Courses", icon: BookOpen },
         { to: "/admin/teachers", label: "Teachers", icon: Users },
+        { to: "/admin/activities", label: "Activities", icon: Grid },
         { to: "/admin/artists", label: "Artists", icon: UserCircle },
         { to: "/admin/events", label: "Events", icon: Calendar },
+        { to: "/admin/news", label: "News", icon: Image },
+        { to: "/admin/offers", label: "Offers", icon: Briefcase },
         { to: "/admin/about", label: "About", icon: Briefcase },
     ];
 

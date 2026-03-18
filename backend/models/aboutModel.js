@@ -133,17 +133,34 @@ getProgramById: async (id) => {
   return rows[0];
 },
 
+getProgramBySlug: async (slug) => {
+  const [rows] = await db.query(
+    "SELECT * FROM Programs WHERE slug = ?",
+    [slug]
+  );
+  return rows[0] || null;
+},
+
 createProgram: async (data) => {
-  const { program_date, title, description, image_url } = data;
+  const { program_date, title, slug, description, image_url, seo_title, seo_description, seo_keywords } = data;
   const [result] = await db.query(
-    "INSERT INTO Programs (program_date, title, description, image_url) VALUES (?, ?, ?, ?)",
-    [program_date, title, description, image_url || null]
+    "INSERT INTO Programs (program_date, title, slug, description, image_url, seo_title, seo_description, seo_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    [
+      program_date,
+      title,
+      slug,
+      description,
+      image_url || null,
+      seo_title || null,
+      seo_description || null,
+      seo_keywords || null,
+    ]
   );
   return result.insertId;
 },
 
 updateProgram: async (id, data) => {
-  const { program_date, title, description, image_url } = data;
+  const { program_date, title, slug, description, image_url, seo_title, seo_description, seo_keywords } = data;
   
   const updates = [];
   const values = [];
@@ -152,8 +169,16 @@ updateProgram: async (id, data) => {
   values.push(program_date);
   updates.push('title = ?');
   values.push(title);
+  updates.push('slug = ?');
+  values.push(slug);
   updates.push('description = ?');
   values.push(description);
+  updates.push('seo_title = ?');
+  values.push(seo_title || null);
+  updates.push('seo_description = ?');
+  values.push(seo_description || null);
+  updates.push('seo_keywords = ?');
+  values.push(seo_keywords || null);
   
   // Only update image_url if a new one is provided
   if (image_url !== undefined) {

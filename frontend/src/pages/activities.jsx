@@ -1,5 +1,9 @@
+import { getAllActivities } from "../admin/services/activitiesService";
 import React, { useEffect, useState, useRef } from "react";
-import { classroomActivities } from "../assets/assets";
+
+
+// Define your YouTube channel URL here
+const YOUTUBE_URL = "https://www.youtube.com/@sadhanakalakendra4620";
 
 const PlayIcon = ({ className = "" }) => (
     <svg 
@@ -10,6 +14,98 @@ const PlayIcon = ({ className = "" }) => (
         <path d="M8 5v14l11-7z"/>
     </svg>
 );
+
+const ClickToPlayYouTube = ({ videoId, title, isPlaying, onPlay }) => {
+    const iframeRef = useRef(null);
+    const [isPaused, setIsPaused] = useState(false);
+
+    useEffect(() => {
+        if (!isPlaying) {
+            setIsPaused(false);
+        }
+    }, [isPlaying]);
+
+    const sendYouTubeCommand = (command) => {
+        if (!iframeRef.current || !iframeRef.current.contentWindow) return;
+
+        iframeRef.current.contentWindow.postMessage(
+            JSON.stringify({
+                event: "command",
+                func: command,
+                args: [],
+            }),
+            "*"
+        );
+    };
+
+    if (!videoId) return null;
+
+    if (isPlaying) {
+        return (
+            <div className="relative h-full w-full">
+                <iframe
+                    ref={iframeRef}
+                    width="100%"
+                    height="100%"
+                    src={`https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0&playsinline=1&enablejsapi=1`}
+                    title={title}
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                    allowFullScreen
+                    className="rounded-lg w-full aspect-video pointer-events-none"
+                ></iframe>
+
+                <div className="absolute bottom-3 right-3 z-10 flex items-center gap-2">
+                    <button
+                        type="button"
+                        onClick={() => {
+                            if (isPaused) {
+                                sendYouTubeCommand("playVideo");
+                                setIsPaused(false);
+                            } else {
+                                sendYouTubeCommand("pauseVideo");
+                                setIsPaused(true);
+                            }
+                        }}
+                        className="rounded-full bg-white/95 px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-[#1f2a44] shadow-md"
+                    >
+                        {isPaused ? "Resume" : "Pause"}
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => {
+                            sendYouTubeCommand("stopVideo");
+                            setIsPaused(false);
+                        }}
+                        className="rounded-full bg-[#cf0408] px-4 py-2 text-xs font-bold uppercase tracking-[0.12em] text-white shadow-md"
+                    >
+                        Stop
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <button
+            type="button"
+            onClick={onPlay}
+            className="group relative h-full w-full overflow-hidden rounded-lg"
+            aria-label={`Play ${title}`}
+        >
+            <img
+                src={`https://img.youtube.com/vi/${videoId}/hqdefault.jpg`}
+                alt={`${title} thumbnail`}
+                className="h-full w-full object-cover"
+                loading="lazy"
+            />
+            <div className="absolute inset-0 bg-black/35 transition-colors duration-300 group-hover:bg-black/45" />
+            <span className="absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-red-600 text-2xl text-white shadow-lg transition-transform duration-300 group-hover:scale-110">
+                ▶
+            </span>
+        </button>
+    );
+};
 
 const VideoCard = ({ videoPath, i }) => {
     const [isPausedAfterLoad, setIsPausedAfterLoad] = useState(false);
@@ -83,16 +179,75 @@ const VideoCard = ({ videoPath, i }) => {
 }
 
 
+
 const Activities = () => {
+    const [activities, setActivities] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [activeVideoKey, setActiveVideoKey] = useState(null);
+
     useEffect(() => {
         window.scrollTo(0, 0);
+        const fetchActivities = async () => {
+            setLoading(true);
+            setError(null);
+            try {
+                const data = await getAllActivities();
+                setActivities(data || []);
+            } catch (err) {
+                setError("Failed to load activities.");
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchActivities();
     }, []);
 
-    const YOUTUBE_URL = "https://www.youtube.com/@sadhanakalakendra4620";
-
-    const allLocalVideos = classroomActivities.videos.map(item => 
-        typeof item === 'object' ? item.videoPath : item
-    );
+    // Helper to render YouTube or Facebook embed
+    const renderVideoEmbed = (url, videoKey) => {
+        if (!url) return null;
+        // YouTube
+        if (url.includes("youtube.com") || url.includes("youtu.be")) {
+            let videoId = "";
+            if (url.includes("youtu.be/")) {
+                videoId = url.split("youtu.be/")[1].split(/[?&]/)[0];
+            } else if (url.includes("/embed/")) {
+                videoId = url.split("/embed/")[1].split(/[?&]/)[0];
+            } else if (url.includes("/shorts/")) {
+                videoId = url.split("/shorts/")[1].split(/[?&]/)[0];
+            } else {
+                const match = url.match(/[?&]v=([^&]+)/);
+                videoId = match ? match[1] : "";
+            }
+            return (
+                <ClickToPlayYouTube
+                    videoId={videoId}
+                    title="YouTube video player"
+                    isPlaying={activeVideoKey === videoKey}
+                    onPlay={() => setActiveVideoKey(videoKey)}
+                />
+            );
+        }
+        // Facebook
+        if (url.includes("facebook.com")) {
+            return (
+                <iframe
+                    src={`https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(url)}&show_text=0&width=560`}
+                    width="100%"
+                    height="315"
+                    style={{ border: "none", overflow: "hidden" }}
+                    scrolling="no"
+                    frameBorder="0"
+                    allowFullScreen={true}
+                    allow="autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share"
+                    className="rounded-lg w-full aspect-video"
+                    title="Facebook video player"
+                ></iframe>
+            );
+        }
+        // Fallback: just a link
+        return <a href={url} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">Watch Video</a>;
+    };
 
     return (
         <section className="py-16 md:py-20 bg-gray-50 font-['Roboto'] ">
@@ -106,20 +261,32 @@ const Activities = () => {
             </div>
 
             <div className="max-w-7xl mx-auto mb-32">
-                <h2 className="text-3xl font-bold text-gray-900 mb-16 text-center font-['Playfair Display'] relative inline-block mx-auto block w-fit pb-2">
+                <h2 className="text-3xl font-bold text-gray-900 mb-16 text-center font-['Playfair Display'] relative inline-block mx-auto w-fit pb-2">
                     Featured Videos
                     <span className="absolute left-1/2 transform -translate-x-1/2 -bottom-2 w-16 h-1 bg-[#cf0408] rounded-full"></span>
                 </h2>
 
-                <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
-                    {allLocalVideos.length > 0 ? (
-                        allLocalVideos.map((videoPath, i) => (
-                           <VideoCard key={i} videoPath={videoPath} i={i} />
-                        ))
-                    ) : (
-                        <p className="col-span-full text-center text-gray-500 text-lg py-12 border-t border-gray-200 bg-white rounded-lg shadow-inner">No featured videos currently available. Please check back soon!</p>
-                    )}
-                </div>
+                {loading ? (
+                    <p className="text-center text-gray-500 text-lg py-12">Loading...</p>
+                ) : error ? (
+                    <p className="text-center text-red-500 text-lg py-12">{error}</p>
+                ) : activities.length > 0 ? (
+                    <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-x-8 gap-y-12">
+                        {activities.map((activity, i) => (
+                            <div key={activity.activity_id} className="bg-white rounded-xl p-3 border border-gray-100 shadow-xl transition duration-500 hover:shadow-2xl hover:shadow-gray-300/60 hover:scale-[1.02] overflow-hidden group">
+                                <div className="relative w-full aspect-video rounded-lg overflow-hidden bg-gray-200 shadow-md flex items-center justify-center cursor-pointer mb-4">
+                                    {renderVideoEmbed(activity.video_url, activity.activity_id || i)}
+                                </div>
+                                <div className="p-2 text-center">
+                                    <h3 className="text-lg font-bold text-[#0f0f50] mb-1 font-['Playfair Display']">{activity.title}</h3>
+                                    {activity.description && <p className="text-gray-600 text-sm font-['Roboto']">{activity.description}</p>}
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                ) : (
+                    <p className="col-span-full text-center text-gray-500 text-lg py-12 border-t border-gray-200 bg-white rounded-lg shadow-inner">No featured videos currently available. Please check back soon!</p>
+                )}
             </div>
 
             <div className="text-center pt-16 border-t border-gray-200 bg-white/60 p-10 rounded-2xl shadow-inner">
@@ -147,7 +314,6 @@ const Activities = () => {
                     <span>Watch on YouTube</span>
                 </a>
             </div>
-
         </section>
     );
 };

@@ -14,6 +14,11 @@ import teachersRoutes from "./routes/teachersRoutes.js";
 import coursesRoutes from "./routes/coursesRoutes.js";
 import artistRoutes from "./routes/artistRoutes.js";
 import eventsRoutes from "./routes/eventsRoutes.js";
+import activitiesRoutes from "./routes/activitiesRoutes.js";
+import newsRoutes from "./routes/newsRoutes.js";
+import offersRoutes from "./routes/offersRoutes.js";
+import programsRoutes from "./routes/programsRoutes.js";
+import sitemapRoutes from "./routes/sitemapRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import registerRoutes from "./routes/registerRoutes.js";
 
@@ -47,6 +52,8 @@ const setCorpHeader = (req, res, next) => {
 const allowedOrigins = [
   process.env.FRONTEND_URL,
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://[::1]:5173",
 ].filter(Boolean); // Remove undefined values
 
 // Helmet configuration with production-ready CSP
@@ -80,6 +87,13 @@ app.use(
         callback(null, true);
         return;
       }
+
+      // In local development, allow all origins to avoid localhost hostname/IP mismatch issues.
+      if (process.env.NODE_ENV !== "production") {
+        callback(null, true);
+        return;
+      }
+
       if (allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -126,8 +140,13 @@ app.use("/api/teachers", teachersRoutes);
 app.use("/api/courses", coursesRoutes);
 app.use("/api/artists", artistRoutes);
 app.use("/api/events", eventsRoutes);
+app.use("/api/activities", activitiesRoutes);
+app.use("/api/news", newsRoutes);
+app.use("/api/offers", offersRoutes);
+app.use("/api/programs", programsRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/admin", limiter, adminRoutes);
+app.use("/sitemap.xml", sitemapRoutes);
 
 app.use((req, res) => {
   res.status(404).json({ message: "Resource not found" });

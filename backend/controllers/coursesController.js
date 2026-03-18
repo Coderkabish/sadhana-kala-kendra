@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import CoursesModel from "../models/coursesModel.js";
 import { logAdminAction } from "../utils/auditLogger.js"; 
+import { slugify } from "../utils/slug.js";
 
 class CoursesController {
     static async removeFile(filePath) {
@@ -31,7 +32,10 @@ class CoursesController {
 
     static async getById(req, res, next) {
         try {
-            const course = await CoursesModel.getById(req.params.id);
+            const slugOrId = req.params.slug;
+            const course = Number.isFinite(Number(slugOrId))
+                ? await CoursesModel.getById(slugOrId)
+                : await CoursesModel.getBySlug(slugOrId);
             if (!course) return res.status(404).json({ message: "Course not found" });
             res.json(course);
         } catch (err) {
@@ -41,9 +45,10 @@ class CoursesController {
 
     static async create(req, res, next) {
         try {
-            const { title, description, level, teacher_name, schedules } = req.body;
+            const { title, description, level, teacher_name, schedules, slug, seo_title, seo_description, seo_keywords } = req.body;
             // 🔑 FIX: Use req.file.filename to save only the filename, prepending the public path
             const image_url = req.file ? `/uploads/${req.file.filename}` : null; 
+            const normalizedSlug = slugify(slug || title);
 
             if (!title?.trim()) {
                 if (req.file) await CoursesController.removeFile(req.file.path); // Use req.file.path for disk deletion
@@ -58,6 +63,10 @@ class CoursesController {
                 teacher_name,
                 image_url, // Saved as /uploads/filename.ext
                 schedules: schedules ? JSON.parse(schedules) : [],
+                slug: normalizedSlug,
+                seo_title,
+                seo_description,
+                seo_keywords,
             });
             await logAdminAction({
                 admin_id: req.admin.admin_id,
@@ -71,6 +80,10 @@ class CoursesController {
             course_id: courseId
         });
         } catch (err) {
+            if (err?.code === "ER_DUP_ENTRY") {
+                if (req.file) await CoursesController.removeFile(req.file.path);
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             if (req.file) {
                 await CoursesController.removeFile(req.file.path); 
             }
@@ -81,7 +94,8 @@ class CoursesController {
     static async update(req, res, next) {
         const courseId = req.params.id;
         try {
-            const { title, description, level, teacher_name, schedules, clear_image } = req.body;
+            const { title, description, level, teacher_name, schedules, clear_image, slug, seo_title, seo_description, seo_keywords } = req.body;
+            const normalizedSlug = slugify(slug || title);
             
             let new_image_path = undefined; 
             
@@ -104,6 +118,10 @@ class CoursesController {
                 teacher_name,
                 image_url: new_image_path,
                 schedules: schedules ? JSON.parse(schedules) : [],
+                slug: normalizedSlug,
+                seo_title,
+                seo_description,
+                seo_keywords,
             });
 
             if (oldImagePath) {
@@ -119,6 +137,10 @@ class CoursesController {
 
             res.json({ message: "Course updated successfully" });
         } catch (err) {
+            if (err?.code === "ER_DUP_ENTRY") {
+                if (req.file) await CoursesController.removeFile(req.file.path);
+                return res.status(409).json({ message: "Slug already exists." });
+            }
             if (req.file) {
                 const newFilePath = req.file.path.replace(/\\/g, "/");
                 await CoursesController.removeFile(newFilePath);

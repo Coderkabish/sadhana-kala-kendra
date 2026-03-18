@@ -31,6 +31,10 @@ export default defineConfig(({ mode }) => {
       chunkSizeWarningLimit: 1000,
     },
     server: {
+      // Run frontend on the expected local dev URL.
+      host: 'localhost',
+      port: Number(env.VITE_PORT) || 5173,
+      strictPort: true,
       // Development proxy - only used in dev mode
       proxy: {
         "/api": {

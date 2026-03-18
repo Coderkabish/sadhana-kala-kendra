@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
 import {
   getAllBOD,
-  getAllPrograms,
   getAllTeamMembers,
 } from "../admin/services/aboutService.js";
-import { SERVER_ROOT_URL } from "../admin/services/api";
+import api, { SERVER_ROOT_URL } from "../admin/services/api";
+import Seo from "../components/Seo";
 import {
   FaAward,
   FaUsers,
@@ -17,6 +17,17 @@ import { MdOutlineCelebration } from "react-icons/md";
 import { GiMusicalNotes } from "react-icons/gi";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
+
+const toAnchorSlug = (program) => {
+  if (program?.slug) return program.slug;
+  return String(program?.title || "program")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
 
 const About = () => {
   // State Management
@@ -40,11 +51,12 @@ const About = () => {
       setError(null);
 
       try {
-        const [bodData, programsData, teamData] = await Promise.all([
+        const [bodData, programsResponse, teamData] = await Promise.all([
           getAllBOD(),
-          getAllPrograms(),
+          api.get("/programs"),
           getAllTeamMembers(),
         ]);
+        const programsData = programsResponse?.data || [];
 
         setBodMembers(bodData);
 
@@ -57,6 +69,17 @@ const About = () => {
 
         if (teamData.length > 0) {
           setActiveTeamMember(teamData[0].id);
+        }
+
+        const hash = window.location.hash.replace(/^#/, "");
+        if (hash) {
+          const matchIndex = sortedPrograms.findIndex(
+            (program) => toAnchorSlug(program) === hash
+          );
+          if (matchIndex >= 0) {
+            setSelectedProgramIndex(matchIndex);
+            document.body.style.overflow = "hidden";
+          }
         }
       } catch (err) {
         console.error("Error fetching About Us data:", err);
@@ -71,6 +94,11 @@ const About = () => {
 
   // Modal Logic
   const openModal = (index) => {
+    const selected = programs[index];
+    const slug = toAnchorSlug(selected);
+    if (slug) {
+      window.history.replaceState(null, "", `/about#${slug}`);
+    }
     setSelectedProgramIndex(index);
     document.body.style.overflow = "hidden";
   };
@@ -82,16 +110,26 @@ const About = () => {
 
   const handleNextModalProgram = (e) => {
     e.stopPropagation();
-    setSelectedProgramIndex((prev) =>
-      prev === programs.length - 1 ? 0 : prev + 1
-    );
+    setSelectedProgramIndex((prev) => {
+      const nextIndex = prev === programs.length - 1 ? 0 : prev + 1;
+      const slug = toAnchorSlug(programs[nextIndex]);
+      if (slug) {
+        window.history.replaceState(null, "", `/about#${slug}`);
+      }
+      return nextIndex;
+    });
   };
 
   const handlePrevModalProgram = (e) => {
     e.stopPropagation();
-    setSelectedProgramIndex((prev) =>
-      prev === 0 ? programs.length - 1 : prev - 1
-    );
+    setSelectedProgramIndex((prev) => {
+      const nextIndex = prev === 0 ? programs.length - 1 : prev - 1;
+      const slug = toAnchorSlug(programs[nextIndex]);
+      if (slug) {
+        window.history.replaceState(null, "", `/about#${slug}`);
+      }
+      return nextIndex;
+    });
   };
 
   // Keyboard Navigation
@@ -146,8 +184,31 @@ const About = () => {
   const modalProgram =
     selectedProgramIndex !== null ? programs[selectedProgramIndex] : null;
 
+  const programStructuredData = {
+    "@context": "https://schema.org",
+    "@graph": programs.map((program) => ({
+      "@type": "EducationalProgram",
+      name: program.title,
+      description: program.description || "Program details",
+      provider: {
+        "@type": "Organization",
+        name: "Sadhana Kala Kendra",
+      },
+      url:
+        typeof window !== "undefined"
+          ? `${window.location.origin}/about#${toAnchorSlug(program)}`
+          : `/about#${toAnchorSlug(program)}`,
+    })),
+  };
+
   return (
     <section className="bg-white text-[#191938] font-['Inter']">
+      <Seo
+        title="About Us | Music Center"
+        description="About Sadhana Kala Kendra, its mission, faculty, legacy, and educational programs."
+        canonicalPath="/about"
+        jsonLd={programStructuredData}
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 space-y-16 md:space-y-24 py-12 md:py-20">
         {/* ======= PAGE HEADING ======= */}
         <div className="text-center space-y-4 md:space-y-6">
@@ -358,7 +419,7 @@ const About = () => {
           </ul>
         </div>
 
-        {/* ======= BOARD OF DIRECTORS ======= */}
+         {/* ======= BOARD OF DIRECTORS ======= */}
         <div className="text-center pt-10 border-t border-gray-200">
           <header className="mb-10 md:mb-14">
             <p className="text-[#cf0408] text-xs sm:text-sm font-bold uppercase tracking-widest mb-2 font-['Inter']">
@@ -381,7 +442,7 @@ const About = () => {
                   className="bg-white p-0 rounded-lg shadow-md border-b-4 border-[#cf0408] transition duration-300 hover:shadow-xl transform group overflow-hidden"
                 >
                   {/* Image Block */}
-                  <div className="h-40 sm:h-48 overflow-hidden bg-gray-100">
+                  <div className="aspect-[3/4] w-full min-h-[160px] max-h-[320px] bg-gray-100 overflow-hidden flex items-center justify-center">
                     <img
                       src={
                         member.profile_image
@@ -389,7 +450,8 @@ const About = () => {
                           : logo
                       }
                       alt={member.name}
-                      className="w-full h-full object-cover object-top transition-transform duration-500 group-hover:scale-105"
+                      className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      style={{ maxHeight: '320px', minHeight: '160px' }}
                     />
                   </div>
                   {/* Text Content */}
@@ -409,6 +471,8 @@ const About = () => {
             </div>
           )}
         </div>
+
+
 
         {/* ======= TEAM MEMBERS ======= */}
         <div className="pt-8 md:pt-12">
@@ -529,9 +593,10 @@ const About = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-4 sm:p-6 md:p-8 pt-4 md:pt-6">
-                {programs.slice(0, 6).map((program, index) => (
-                  <div
+                {programs.map((program, index) => (
+                  <section
                     key={program.program_id}
+                    id={toAnchorSlug(program)}
                     className="bg-gray-50 rounded-xl shadow-md overflow-hidden border border-gray-200 cursor-pointer transition duration-300 hover:shadow-xl group"
                     onClick={() => openModal(index)}
                   >
@@ -574,7 +639,7 @@ const About = () => {
                         </svg>
                       </div>
                     </div>
-                  </div>
+                  </section>
                 ))}
               </div>
               <div className="text-center pt-6 md:pt-8 pb-8 md:pb-12">

@@ -47,7 +47,30 @@ class CoursesModel {
         return course;
     }
 
-    static async create({ title, description, level, teacher_name, image_url, schedules }) {
+    static async getBySlug(slug) {
+        const [rows] = await db.query(
+            `SELECT c.*, t.full_name AS teacher_name
+             FROM Courses c
+             LEFT JOIN Teachers t ON c.teacher_id = t.teacher_id
+             WHERE c.slug = ?`,
+            [slug]
+        );
+
+        const course = rows[0];
+        if (!course) return null;
+
+        const [schedules] = await db.query(
+            `SELECT cs.*, t.full_name AS teacher_name
+             FROM Class_Schedule cs
+             LEFT JOIN Teachers t ON cs.teacher_id = t.teacher_id
+             WHERE cs.course_id = ?`,
+            [course.course_id]
+        );
+        course.schedules = schedules;
+        return course;
+    }
+
+    static async create({ title, description, level, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
         if (!title?.trim()) throw new Error("Course title is required");
         
         const connection = await db.getConnection(); // 🔧 Start transaction
@@ -61,9 +84,19 @@ class CoursesModel {
             const teacher_id = teacherRows[0]?.teacher_id || null;
 
             const [result] = await connection.query(
-                `INSERT INTO Courses (course_name, description, level, teacher_id, image_url)
-                 VALUES (?, ?, ?, ?, ?)`,
-                [title, description || null, level || null, teacher_id, image_url || null]
+                `INSERT INTO Courses (course_name, slug, description, level, teacher_id, image_url, seo_title, seo_description, seo_keywords)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                [
+                    title,
+                    slug,
+                    description || null,
+                    level || null,
+                    teacher_id,
+                    image_url || null,
+                    seo_title || null,
+                    seo_description || null,
+                    seo_keywords || null,
+                ]
             );
 
             const course_id = result.insertId;
@@ -99,7 +132,7 @@ class CoursesModel {
         }
     }
 
-    static async update(course_id, { title, description, level, teacher_name, image_url, schedules }) {
+    static async update(course_id, { title, description, level, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
         if (!course_id) throw new Error("Course ID is required for update.");
         if (!title?.trim()) throw new Error("Course title is required");
 
@@ -115,7 +148,16 @@ class CoursesModel {
 
             let oldImagePath = null;
             let updateImageClause = '';
-            const params = [title, description || null, level || null, teacher_id];
+            const params = [
+                title,
+                slug,
+                description || null,
+                level || null,
+                teacher_id,
+                seo_title || null,
+                seo_description || null,
+                seo_keywords || null,
+            ];
 
             if (image_url !== undefined) {
                 const [old] = await connection.query(`SELECT image_url FROM Courses WHERE course_id = ?`, [course_id]);
@@ -129,7 +171,7 @@ class CoursesModel {
 
             await connection.query(
                 `UPDATE Courses
-                 SET course_name = ?, description = ?, level = ?, teacher_id = ? ${updateImageClause}
+                 SET course_name = ?, slug = ?, description = ?, level = ?, teacher_id = ?, seo_title = ?, seo_description = ?, seo_keywords = ? ${updateImageClause}
                  WHERE course_id = ?`,
                 params
             );

@@ -6,8 +6,11 @@ import AdminAbout from "../admin/pages/AdminAbout";
 import AdminCourses from "../admin/pages/AdminCourses";
 import AdminArtists from "../admin/pages/AdminArtists";
 import AdminEvents from "../admin/pages/AdminEvents";
+import AdminActivities from "../admin/pages/AdminActivities";
 import AdminTeachers from "../admin/pages/AdminTeachers";
 import AdminRegister from "../admin/pages/AdminRegister";
+import AdminNews from "../admin/pages/AdminNews";
+import AdminOffers from "../admin/pages/AdminOffers";
 import api, { setUnauthorizedRedirectCallback } from "../admin/services/api";
 
 const AdminLogin = React.lazy(() => import("../admin/pages/AdminLogin"));
@@ -111,8 +114,11 @@ const AdminRoutes = () => {
                 <Route path="/" element={<ProtectedRoute element={<AdminHome />} />} />
                 <Route path="about" element={<ProtectedRoute element={<AdminAbout />} />} />
                 <Route path="courses" element={<ProtectedRoute element={<AdminCourses />} />} />
+                <Route path="activities" element={<ProtectedRoute element={<AdminActivities />} />} />
                 <Route path="artists" element={<ProtectedRoute element={<AdminArtists />} />} />
                 <Route path="events" element={<ProtectedRoute element={<AdminEvents />} />} />
+                <Route path="news" element={<ProtectedRoute element={<AdminNews />} />} />
+                <Route path="offers" element={<ProtectedRoute element={<AdminOffers />} />} />
                 <Route path="teachers" element={<ProtectedRoute element={<AdminTeachers />} />} />
                 <Route path="register" element={<ProtectedRoute element={<AdminRegister />} />} />
 

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { getAllArtists } from "../admin/services/artistsService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 
@@ -100,6 +101,13 @@ const Artists = () => {
                                     <p className="text-gray-700 mb-4 font-['Roboto'] text-center line-clamp-3">
                                         {artist.bio}
                                     </p>
+                                                                        {artist.slug ? (
+                                                                            <div className="text-center">
+                                                                                <Link to={`/artists/${artist.slug}`} className="text-indigo-700 font-semibold hover:text-indigo-900">
+                                                                                    View Profile Route
+                                                                                </Link>
+                                                                            </div>
+                                                                        ) : null}
                                 </div>
                             </div>
                         ))

@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { getAllCourses } from "../admin/services/coursesService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 import {
@@ -162,6 +163,15 @@ const Courses = () => {
                   {course.course_name}
                 </h3>
                 <p className="text-gray-600 mb-2">{course.description}</p>
+                {course.slug ? (
+                  <Link
+                    to={`/courses/${course.slug}`}
+                    className="inline-block mt-3 text-indigo-700 font-semibold hover:text-indigo-900"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    View Detials
+                  </Link>
+                ) : null}
               </div>
             </div>
           ))}
@@ -246,6 +256,14 @@ const Courses = () => {
                 <Calendar className="w-5 h-5 mr-3 text-[#cf0408]" />
                 Available Schedules
               </h3>
+
+              {selectedCourse.slug ? (
+                <div className="mb-4">
+                  <Link to={`/courses/${selectedCourse.slug}`} className="text-indigo-700 font-semibold hover:text-indigo-900">
+                    Open dedicated detail route
+                  </Link>
+                </div>
+              ) : null}
 
               <div className="space-y-3">
                 {Object.keys(groupedSchedules).length === 0 ? (

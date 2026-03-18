@@ -6,492 +6,310 @@ import {
   deleteEvent,
 } from "../services/eventsService";
 
-// --- Utility Functions (Keep these as they are good) ---
+/** * PROFESSIONAL UI UTILS */
+const LucideIcon = ({ children }) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">
+    {children}
+  </svg>
+);
+
+const Alert = ({ message, type, onClose }) => (
+  <div className={`flex items-start md:items-center justify-between p-4 mb-6 rounded-xl border animate-in fade-in slide-in-from-top-4 duration-300 ${
+    type === "error" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"
+  }`}>
+    <div className="flex items-center font-medium">
+      <span className="shrink-0">{type === "error" ? "⚠️" : "✅"}</span> 
+      <span className="ml-3 text-sm md:text-base">{message}</span>
+    </div>
+    <button onClick={onClose} className="hover:opacity-70 transition-opacity text-xl leading-none ml-4">&times;</button>
+  </div>
+);
 
 const formatEventDataForForm = (event) => ({
   event_id: event.event_id || null,
   event_name: event.event_name || "",
+  slug: event.slug || "",
   description: event.description || "",
-  event_date: event.event_date
-    ? new Date(event.event_date).toISOString().split("T")[0]
-    : "",
+  event_date: event.event_date ? new Date(event.event_date).toISOString().split("T")[0] : "",
   event_time: event.event_time || "18:00",
   venue: event.venue || "",
   organized_by: event.organized_by || "",
-  category: event.category || "upcoming", // Ensures default category is set
+  category: event.category || "upcoming",
+  seo_title: event.seo_title || "",
+  seo_description: event.seo_description || "",
+  seo_keywords: event.seo_keywords || "",
 });
 
-const formatFormDataForAPI = (formData) => {
-  const { event_id, ...data } = formData;
-  return data;
-};
-
-// --- Alert Component (Keep this as is) ---
-
-const Alert = ({ message, type, onClose }) => (
-  <div
-    className={`p-4 rounded-lg font-roboto mb-4 ${
-      type === "error"
-        ? "bg-red-100 text-red-800 border border-red-400"
-        : type === "success"
-        ? "bg-green-100 text-green-800 border border-green-400"
-        : "bg-blue-100 text-blue-800 border border-blue-400"
-    }`}
-  >
-    {message}
-    <button onClick={onClose} className="float-right font-bold ml-4">
-      ×
-    </button>
-  </div>
-);
-
-// --- EventForm Component (Keep this as is) ---
-
+/** * COMPONENT: EventForm */
 const EventForm = ({ event, onSubmit, onCancel, isSaving }) => {
-  const initialData = formatEventDataForForm(event || {});
-  const [formData, setFormData] = useState(initialData);
+  const [formData, setFormData] = useState(formatEventDataForForm(event || {}));
 
-  // Update form data when the 'event' prop changes (e.g., when clicking edit)
   useEffect(() => {
     setFormData(formatEventDataForForm(event || {}));
   }, [event]);
-
-  // Use the same styles as requested in your saved preferences (Tailwind CSS properties)
-  const formInputStyle = "mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3 focus:ring-indigo-500 focus:border-indigo-500";
-  const labelStyle = "block text-sm font-medium text-gray-700";
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
+  const inputStyle = "w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all outline-none bg-white text-slate-700 text-sm md:text-base";
+  const labelStyle = "block text-[10px] md:text-[11px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 ml-1";
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="bg-white p-6 md:p-8 rounded-lg shadow-xl border border-gray-100 font-roboto"
-    >
-      <h3 className="text-xl font-playfair font-bold mb-6 text-gray-800">
-        {event?.event_id ? "Edit Event" : "Add New Event"}
-      </h3>
+    <form onSubmit={(e) => { e.preventDefault(); onSubmit(formData); }} 
+      className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden mb-10 w-full max-w-4xl mx-auto">
+      <div className="bg-slate-50 border-b border-slate-200 px-5 md:px-8 py-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h3 className="text-lg font-bold text-slate-800">
+          {event?.event_id ? "📝 Edit Event" : "✨ Schedule Event"}
+        </h3>
+        <span className={`text-[10px] font-bold px-2 py-1 rounded-md uppercase tracking-wider ${formData.category === 'upcoming' ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-200 text-slate-600'}`}>
+            {formData.category} Mode
+        </span>
+      </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        {/* Event Name */}
-        <div className="col-span-2">
-          <label className={labelStyle}>
-            Event Name
-          </label>
-          <input
-            type="text"
-            name="event_name"
-            value={formData.event_name}
-            onChange={handleChange}
-            required
-            className={formInputStyle}
-          />
+      <div className="p-5 md:p-8 grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-6">
+        <div className="md:col-span-2">
+          <label className={labelStyle}>Event Title</label>
+          <input type="text" name="event_name" value={formData.event_name} onChange={handleChange} required className={inputStyle} placeholder="e.g. Annual Art Symposium" />
         </div>
 
-        {/* Date */}
+        <div className="md:col-span-2">
+          <label className={labelStyle}>Slug (Optional)</label>
+          <input type="text" name="slug" value={formData.slug} onChange={handleChange} className={inputStyle} placeholder="annual-art-symposium" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:col-span-2 gap-5">
+            <div>
+              <label className={labelStyle}>Date</label>
+              <input type="date" name="event_date" value={formData.event_date} onChange={handleChange} required className={inputStyle} />
+            </div>
+            <div>
+              <label className={labelStyle}>Start Time</label>
+              <input type="time" name="event_time" value={formData.event_time} onChange={handleChange} required className={inputStyle} />
+            </div>
+        </div>
+
         <div>
-          <label className={labelStyle}>
-            Date
-          </label>
-          <input
-            type="date"
-            name="event_date"
-            value={formData.event_date}
-            onChange={handleChange}
-            required
-            className={formInputStyle}
-          />
+          <label className={labelStyle}>Venue / Location</label>
+          <input type="text" name="venue" value={formData.venue} onChange={handleChange} required className={inputStyle} placeholder="Grand Ballroom" />
         </div>
-        {/* Time */}
+
         <div>
-          <label className={labelStyle}>
-            Time
-          </label>
-          <input
-            type="time"
-            name="event_time"
-            value={formData.event_time}
-            onChange={handleChange}
-            required
-            className={formInputStyle}
-          />
+          <label className={labelStyle}>Organized By</label>
+          <input type="text" name="organized_by" value={formData.organized_by} onChange={handleChange} className={inputStyle} placeholder="Department Name" />
         </div>
 
-        {/* Venue */}
-        <div className="col-span-1">
-          <label className={labelStyle}>
-            Venue
-          </label>
-          <input
-            type="text"
-            name="venue"
-            value={formData.venue}
-            onChange={handleChange}
-            required
-            className={formInputStyle}
-          />
-        </div>
-
-        {/* Organized By */}
-        <div className="col-span-1">
-          <label className={labelStyle}>
-            Organized By (Optional)
-          </label>
-          <input
-            type="text"
-            name="organized_by"
-            value={formData.organized_by}
-            onChange={handleChange}
-            className={formInputStyle}
-          />
-        </div>
-
-        {/* Category (Now using a Select) */}
-        <div className="col-span-2">
-          <label className={labelStyle}>
-            Category
-          </label>
-          <select
-            name="category"
-            value={formData.category}
-            onChange={handleChange}
-            required
-            className={formInputStyle + " bg-white appearance-none pr-10"}
-          >
-            <option value="upcoming">Upcoming</option>
-            <option value="past">Past</option>
+        <div className="md:col-span-2">
+          <label className={labelStyle}>Change Category</label>
+          <select name="category" value={formData.category} onChange={handleChange} required className={inputStyle}>
+            <option value="upcoming">Upcoming (Active)</option>
+            <option value="past">Past (Archived)</option>
           </select>
         </div>
 
-        {/* Description */}
-        <div className="col-span-2">
-          <label className={labelStyle}>
-            Description
-          </label>
-          <textarea
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            rows="3"
-            className={formInputStyle}
-          ></textarea>
+        <div className="md:col-span-2">
+          <label className={labelStyle}>Description & Notes</label>
+          <textarea name="description" value={formData.description} onChange={handleChange} rows="3" className={inputStyle} placeholder="Provide details..."></textarea>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={labelStyle}>SEO Title</label>
+          <input type="text" name="seo_title" value={formData.seo_title} onChange={handleChange} className={inputStyle} placeholder="SEO title for this event" />
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={labelStyle}>SEO Description</label>
+          <textarea name="seo_description" value={formData.seo_description} onChange={handleChange} rows="3" className={inputStyle} placeholder="Short SEO summary" ></textarea>
+        </div>
+
+        <div className="md:col-span-2">
+          <label className={labelStyle}>SEO Keywords</label>
+          <input type="text" name="seo_keywords" value={formData.seo_keywords} onChange={handleChange} className={inputStyle} placeholder="music event, kala kendra, recital" />
         </div>
       </div>
 
-      <div className="mt-8 flex justify-end space-x-3 font-inter">
-        <button
-          type="button"
-          onClick={onCancel}
-          disabled={isSaving}
-          className="px-5 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition duration-150"
-        >
-          Cancel
-        </button>
-        <button
-          type="submit"
-          disabled={isSaving}
-          className={`px-5 py-2 rounded-md text-white font-semibold transition duration-150 ${
-            isSaving ? "bg-indigo-400 cursor-not-allowed" : "bg-indigo-600 hover:bg-indigo-700"
-          }`}
-        >
-          {isSaving
-            ? "Saving..."
-            : event?.event_id
-            ? "Save Changes"
-            : "Add Event"}
+      <div className="bg-slate-50 px-5 md:px-8 py-4 flex flex-col-reverse sm:flex-row justify-end gap-3">
+        <button type="button" onClick={onCancel} className="w-full sm:w-auto px-6 py-2.5 rounded-xl font-semibold text-slate-600 hover:bg-slate-200 transition">Discard</button>
+        <button type="submit" disabled={isSaving} className="w-full sm:w-auto px-8 py-2.5 bg-indigo-600 text-white rounded-xl font-bold shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-all disabled:opacity-50">
+          {isSaving ? "Saving..." : "Save Changes"}
         </button>
       </div>
     </form>
   );
 };
 
-// --- AdminEvents Component (The main component to use) ---
-
 export default function AdminEvents() {
   const [events, setEvents] = useState([]);
-  const [editingEvent, setEditingEvent] = useState(null); // Used for both creating and editing
+  const [editingEvent, setEditingEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [message, setMessage] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeTab, setActiveTab] = useState("upcoming");
 
-  const formatDateDisplay = (dateString) => {
-    if (!dateString) return "N/A";
-    const date = new Date(dateString);
-    return date.toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
-  };
-
   const fetchData = useCallback(async () => {
     setLoading(true);
-    setError(null);
     try {
       const data = await getAllEvents();
       setEvents(data);
     } catch (err) {
-      setError("Failed to fetch events data. Please check connection.");
+      setError("Failed to sync event records.");
     } finally {
       setLoading(false);
     }
   }, []);
 
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleFormSubmit = async (formData) => {
     setIsSaving(true);
     setError(null);
-    setMessage(null);
-
-    const apiPayload = formatFormDataForAPI(formData);
-
+    const { event_id, ...apiPayload } = formData;
     try {
-      if (editingEvent?.event_id) {
-        // UPDATE operation
-        await updateEvent(editingEvent.event_id, apiPayload);
-        setMessage("Event updated successfully!");
+      if (event_id) {
+        await updateEvent(event_id, apiPayload);
+        setMessage("Event successfully updated.");
       } else {
-        // CREATE operation
         await createEvent(apiPayload);
-        setMessage("Event created successfully!");
+        setMessage("New event scheduled successfully.");
       }
-
-      setEditingEvent(null); // Close the form
-      await fetchData(); // Refresh the list
+      setEditingEvent(null);
+      fetchData();
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message ||
-        err.message ||
-        "An unknown error occurred.";
-      setError(errorMsg);
+      setError("An error occurred while saving.");
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDelete = async (id) => {
-    // Delete operation
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
-
-    setError(null);
-    setMessage(null);
-    setLoading(true);
-
+    if (!window.confirm("Confirm deletion?")) return;
     try {
       await deleteEvent(id);
-      setMessage("Event deleted successfully.");
-      await fetchData();
+      setMessage("Event record deleted.");
+      fetchData();
     } catch (err) {
-      const errorMsg =
-        err.response?.data?.message || err.message || "Failed to delete event.";
-      setError(errorMsg);
-      setLoading(false);
+      setError("Failed to delete record.");
     }
   };
 
-  const handleCancel = () => {
-    setEditingEvent(null);
-    setError(null);
-    setMessage(null);
-  };
-  
-  // Logic to open the form for a NEW event
-  const handleAddNewEvent = () => {
-    // Set a temporary event object with the correct category based on the active tab
-    // The formatEventDataForForm utility will handle setting the rest of the fields to their defaults
-    setEditingEvent({ category: activeTab });
-    window.scrollTo({ top: 0, behavior: "smooth" });
-    // Clear any previous status messages when opening the form
-    setError(null); 
-    setMessage(null);
-  }
-
-  const showForm = editingEvent !== null;
-
-  // Filter events by active tab
-  const filteredEvents = events.filter(
-    (event) => event.category === activeTab
-  ).sort((a, b) => new Date(a.event_date) - new Date(b.event_date)); // Sort by date for better display
+  const filteredEvents = events
+    .filter((e) => e.category === activeTab)
+    .sort((a, b) => new Date(a.event_date) - new Date(b.event_date));
 
   return (
-    <div className="container mx-auto p-4 md:p-8 lg:p-12 font-sans">
-      <h1 className="text-4xl lg:text-3xl font-playfair font-extrabold text-[#0f0f50] mb-8 border-b-4 border-indigo-300 pb-4 flex items-center">
-        Manage Events Content
-      </h1>
+    <div className="min-h-screen bg-[#f8fafc] pb-10 text-slate-900">
+      {/* HEADER SECTION */}
+      <div className="bg-white border-b border-slate-200 mb-6 md:mb-10">
+        <div className="container mx-auto px-4 sm:px-6 py-6 md:py-10">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div className="text-left">
+              <h1 className="text-2xl md:text-3xl font-black tracking-tight text-slate-900">Events Console</h1>
+              <p className="text-slate-500 text-sm md:text-base mt-1">Manage institutional schedule and archives.</p>
+            </div>
+            {!editingEvent && (
+              <button 
+                onClick={() => setEditingEvent({ category: activeTab })}
+                className="w-full md:w-auto inline-flex items-center justify-center px-6 py-3.5 bg-indigo-600 text-white font-bold rounded-xl shadow-xl shadow-indigo-100 hover:bg-indigo-700 transition-all active:scale-95"
+              >
+                <LucideIcon><path d="M12 5v14M5 12h14" /></LucideIcon>
+                Add {activeTab} Event
+              </button>
+            )}
+          </div>
 
-      {/* Alert Messages */}
-      <div className="mb-6">
-        {error && (
-          <Alert message={error} type="error" onClose={() => setError(null)} />
-        )}
-        {message && (
-          <Alert
-            message={message}
-            type="success"
-            onClose={() => setMessage(null)}
-          />
-        )}
+          {!editingEvent && (
+            <div className="flex gap-6 md:gap-10 mt-8 border-b border-slate-100 overflow-x-auto no-scrollbar">
+              {["upcoming", "past"].map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className={`pb-4 text-[11px] md:text-sm font-bold uppercase tracking-[0.15em] transition-all whitespace-nowrap relative ${
+                    activeTab === tab ? "text-indigo-600" : "text-slate-400 hover:text-slate-600"
+                  }`}
+                >
+                  {tab} Events
+                  {activeTab === tab && <div className="absolute bottom-0 left-0 w-full h-1 bg-indigo-600 rounded-t-full"></div>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Event Form (Create/Update Section) */}
-      {showForm && (
-        <div className="mb-8">
-          <EventForm
-            // Pass the editingEvent object or an empty object to handle both new and edit modes
-            event={editingEvent}
-            onSubmit={handleFormSubmit}
-            onCancel={handleCancel}
-            isSaving={isSaving}
-          />
-        </div>
-      )}
+      <div className="container mx-auto px-4 sm:px-6">
+        {error && <Alert message={error} type="error" onClose={() => setError(null)} />}
+        {message && <Alert message={message} type="success" onClose={() => setMessage(null)} />}
 
-      {/* Tabs Navigation and Add Button */}
-      {/* Tabs Navigation (First Line) */}
-{!showForm && (
-  <div className="mb-6 border-b border-gray-200 pb-2">
-    <div className="flex space-x-6">
-      <button
-        onClick={() => setActiveTab("upcoming")}
-        className={`pb-2 font-semibold transition-colors ${
-          activeTab === "upcoming"
-            ? "text-indigo-600 border-b-2 border-indigo-600"
-            : "text-gray-600 hover:text-indigo-600"
-        }`}
-      >
-        Upcoming Events
-      </button>
-      <button
-        onClick={() => setActiveTab("past")}
-        className={`pb-2 font-semibold transition-colors ${
-          activeTab === "past"
-            ? "text-indigo-600 border-b-2 border-indigo-600"
-            : "text-gray-600 hover:text-indigo-600"
-        }`}
-      >
-        Past Events
-      </button>
-    </div>
-  </div>
-)}
-
-{!showForm && (
-  <button
-    onClick={handleAddNewEvent}
-    className="mb-8 px-6 py-3 text-white font-semibold rounded-lg shadow-md transition duration-150 font-inter bg-indigo-600 hover:bg-indigo-700"
-  >
-    + Add {" "}
-    {activeTab === "upcoming" ? "Upcoming Event" : "Past Event"}
-  </button>
-)}
-
-      {/* Event List (Read Section) */}
-      {!showForm && (
-        <>
-          {loading ? (
-            <div className="text-center py-10 font-roboto text-lg text-gray-600">
-              Loading events data...
-            </div>
-          ) : error ? (
-             <div className="p-4 rounded-lg font-roboto mb-4 bg-red-100 text-red-800 border border-red-400">
-                <p>Error: {error}</p>
-             </div>
-          ) : filteredEvents.length > 0 ? (
-            <div className="overflow-x-auto shadow-md rounded-lg mt-6">
-              <table className="min-w-full bg-white font-roboto">
-                <thead className="bg-gray-50 border-b border-gray-200">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Event
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">
-                      Date & Time
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">
-                      Venue
-                    </th>
-                    {/* Category column is less useful in a filtered list, but keep it for clarity */}
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden md:table-cell">
-                      Category
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  {filteredEvents.map((event) => (
-                    <tr
-                      key={event.event_id}
-                      className="hover:bg-gray-50 transition duration-100"
-                    >
-                      <td className="px-4 py-3 text-sm font-semibold text-gray-900">
-                        {event.event_name}
-                        <span className="block text-xs font-normal text-gray-500">
-                          {event.organized_by || "Internal"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500">
-                        {formatDateDisplay(event.event_date)} at{" "}
-                        {event.event_time}
-                      </td>
-                      <td className="px-4 py-3 text-sm text-gray-500 hidden sm:table-cell">
-                        {event.venue}
-                      </td>
-                      <td className="px-4 py-3 text-sm hidden md:table-cell">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                            event.category === "upcoming"
-                              ? "bg-green-100 text-green-800"
-                              : "bg-gray-100 text-gray-800"
-                          }`}
-                        >
-                          {event.category === "upcoming" ? "Upcoming" : "Past"}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3 text-center text-sm font-medium space-x-2">
-                        {/* Edit Button: Sets the event to editingEvent, which shows the form */}
-                        <button
-                          onClick={() => {
-                            setEditingEvent(event);
-                            window.scrollTo({ top: 0, behavior: "smooth" });
-                          }}
-                          className="text-indigo-600 hover:text-indigo-900 px-2 py-1 rounded-md hover:bg-indigo-50"
-                        >
-                          Edit
-                        </button>
-                        {/* Delete Button */}
-                        <button
-                          onClick={() => handleDelete(event.event_id)}
-                          className="text-red-600 hover:text-red-900 px-2 py-1 rounded-md hover:bg-red-50"
-                        >
-                          Delete
-                        </button>
-                      </td>
+        {editingEvent ? (
+          <EventForm event={editingEvent} onSubmit={handleFormSubmit} onCancel={() => setEditingEvent(null)} isSaving={isSaving} />
+        ) : (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            {loading ? (
+              <div className="p-16 text-center">
+                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
+              </div>
+            ) : filteredEvents.length > 0 ? (
+              /* MOBILE SCROLL CONTAINER */
+              <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
+                <table className="w-full text-left border-collapse min-w-[700px]">
+                  <thead>
+                    <tr className="bg-slate-50/50 border-b border-slate-200">
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Event Detail</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Schedule & Venue</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : (
-            <p className="p-4 bg-yellow-50 text-yellow-700 rounded-lg border border-yellow-200 font-roboto">
-              No **{activeTab}** events found. Click 'Add New Event' above to create one.
-            </p>
-          )}
-        </>
-      )}
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredEvents.map((event) => (
+                      <tr key={event.event_id} className="hover:bg-slate-50/80 transition-colors group">
+                        <td className="px-6 py-5">
+                          <p className="font-bold text-slate-800 text-sm md:text-base group-hover:text-indigo-600 transition-colors">{event.event_name}</p>
+                          <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-tighter mt-0.5">{event.organized_by || "Internal"}</p>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex flex-col">
+                            <span className="text-xs md:text-sm font-semibold text-slate-600 italic">
+                              {new Date(event.event_date).toLocaleDateString("en-US", { month: 'long', day: 'numeric', year: 'numeric' })}
+                            </span>
+                            <span className="text-[11px] md:text-xs text-slate-400 mt-0.5 font-medium">{event.event_time} • {event.venue}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          <div className="flex justify-end gap-1.5">
+                            <button 
+                              onClick={() => { setEditingEvent(event); window.scrollTo({ top: 0, behavior: "smooth" }); }} 
+                              className="p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
+                              title="Edit"
+                            >
+                              <LucideIcon><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" /><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" /></LucideIcon>
+                            </button>
+                            <button 
+                              onClick={() => handleDelete(event.event_id)} 
+                              className="p-2.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
+                              title="Delete"
+                            >
+                              <LucideIcon><path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></LucideIcon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="p-16 md:p-24 text-center">
+                <div className="text-5xl md:text-6xl mb-4 grayscale opacity-50">📅</div>
+                <h3 className="text-lg md:text-xl font-bold text-slate-800">Schedule is empty</h3>
+                <p className="text-slate-400 text-sm mt-1">No {activeTab} events were found in the database.</p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

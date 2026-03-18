@@ -29,6 +29,7 @@ router.delete("/team-members/:id", adminAuth, AboutController.deleteTeamMember);
 // ======== PROGRAMS ROUTES ========
 // PUBLIC
 router.get("/programs", AboutController.getAllPrograms);
+router.get("/programs/slug/:slug", AboutController.getProgramBySlug);
 router.get("/programs/:id", AboutController.getProgramById);
 
 // ADMIN PROTECTED

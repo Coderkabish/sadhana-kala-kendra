@@ -19,17 +19,27 @@ class ArtistModel {
     return rows[0];
   }
 
+  // Get artist by slug
+  static async getBySlug(slug) {
+    const [rows] = await db.query(
+      `SELECT * FROM Artists WHERE slug = ?`,
+      [slug]
+    );
+    return rows[0] || null;
+  }
+
   // Create new artist
-  static async create({ full_name, bio, profile_image }) {
+  static async create({ full_name, slug, bio, profile_image, seo_title, seo_description, seo_keywords }) {
     const [result] = await db.query(
-      `INSERT INTO Artists (full_name, bio, profile_image) VALUES (?, ?, ?)`,
-      [full_name, bio, profile_image]
+      `INSERT INTO Artists (full_name, slug, bio, profile_image, seo_title, seo_description, seo_keywords)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [full_name, slug, bio, profile_image, seo_title || null, seo_description || null, seo_keywords || null]
     );
     return result.insertId;
   }
 
   // Update artist
-  static async update(artist_id, { full_name, bio, profile_image }) {
+  static async update(artist_id, { full_name, slug, bio, profile_image, seo_title, seo_description, seo_keywords }) {
     const fields = [];
     const values = [];
 
@@ -38,9 +48,29 @@ class ArtistModel {
       values.push(full_name);
     }
 
+    if (slug !== undefined) {
+      fields.push("slug = ?");
+      values.push(slug);
+    }
+
     if (bio !== undefined) {
       fields.push("bio = ?");
       values.push(bio);
+    }
+
+    if (seo_title !== undefined) {
+      fields.push("seo_title = ?");
+      values.push(seo_title);
+    }
+
+    if (seo_description !== undefined) {
+      fields.push("seo_description = ?");
+      values.push(seo_description);
+    }
+
+    if (seo_keywords !== undefined) {
+      fields.push("seo_keywords = ?");
+      values.push(seo_keywords);
     }
 
     // Only update if a **new file** was uploaded

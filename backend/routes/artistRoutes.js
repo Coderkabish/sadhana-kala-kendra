@@ -7,7 +7,7 @@ const router = express.Router();
 
 // PUBLIC ROUTES (Anyone can view all artists or a single artist)
 router.get("/", ArtistController.getAll);
-router.get("/:id", ArtistController.getById);
+router.get("/:slug", ArtistController.getById);
 
 // ADMIN ROUTES (CRUD - Protected by adminAuth middleware)
 // Use uploadMedia instead of upload
