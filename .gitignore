@@ -39,3 +39,6 @@ build/
 # Uploads (optional - keep folder structure)
 backend/uploads/*
 !backend/uploads/.gitkeep
+
+# Local files folder (temporary storage)
+files/
