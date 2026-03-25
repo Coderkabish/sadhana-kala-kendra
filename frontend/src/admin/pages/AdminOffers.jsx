@@ -230,9 +230,26 @@ const AdminOffers = () => {
             </div>
 
             <div className="md:col-span-2">
-              <label className="text-sm font-semibold">Image</label>
-              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files?.[0] || null)} className="mt-2 w-full" />
-              {imagePreview && <img src={imagePreview} alt="Offer preview" className="mt-3 w-40 h-24 object-cover rounded-lg border" />}
+              <label className="block text-sm font-semibold text-slate-700 mb-3">Image</label>
+              <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+                <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+                  {imagePreview ? (
+                    <img src={imagePreview} alt="Offer preview" className="w-full h-full object-cover" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+                  )}
+                </div>
+                <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+                  {formData.offer_id ? "Change Photo" : "Upload Photo"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setImageFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                  />
+                </label>
+                <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
+              </div>
             </div>
 
             <div className="md:col-span-2">

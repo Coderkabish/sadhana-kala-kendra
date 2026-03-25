@@ -120,6 +120,7 @@ Create `.env.production` in the `frontend/` folder locally:
 ```env
 VITE_API_BASE_URL=https://api.yourdomain.com/api
 VITE_BASE_URL=/
+VITE_SITE_URL=https://yourdomain.com
 ```
 
 ### Step 2: Build the Frontend

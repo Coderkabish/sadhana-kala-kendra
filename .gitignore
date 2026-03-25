@@ -41,4 +41,5 @@ backend/uploads/*
 !backend/uploads/.gitkeep
 
 # Local files folder (temporary storage)
+/files/
 files/

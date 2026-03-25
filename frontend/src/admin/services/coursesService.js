@@ -10,6 +10,7 @@ const createFormData = (data, isUpdate) => {
   formData.append("slug", data.slug || "");
   formData.append("description", data.description || "");
   formData.append("level", data.level || "");
+  formData.append("price", data.price ?? "");
   formData.append("teacher_name", mainTeacherName);
   formData.append("seo_title", data.seo_title || "");
   formData.append("seo_description", data.seo_description || "");
@@ -60,7 +61,6 @@ export const createCourse = async (data) => {
   try {
     const formData = createFormData(data, false);
     const response = await api.post(COURSES_API, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
       withCredentials: true,
     });
     return response.data;
@@ -73,7 +73,6 @@ export const updateCourse = async (id, data) => {
   try {
     const formData = createFormData(data, true);
     const response = await api.put(`${COURSES_API}/${id}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
       withCredentials: true,
     });
     return response.data;

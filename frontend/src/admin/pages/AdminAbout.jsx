@@ -66,6 +66,11 @@ const BODForm = ({ member, onSubmit, onCancel, isSaving }) => {
   };
 
   const isImageRequired = !member && !formData.existing_profile_image;
+  const profilePreviewUrl = formData.profile_image_file
+    ? URL.createObjectURL(formData.profile_image_file)
+    : formData.existing_profile_image
+    ? `${SERVER_ROOT_URL}${formData.existing_profile_image}`
+    : "";
 
   return (
     <form
@@ -119,34 +124,39 @@ const BODForm = ({ member, onSubmit, onCancel, isSaving }) => {
 
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Profile Image{" "}
-            {isImageRequired && <span className="text-red-500">*</span>}
+            Profile Image {isImageRequired && <span className="text-red-500">*</span>}
           </label>
 
-          {(formData.existing_profile_image || formData.profile_image_file) && (
-            <div className="relative mb-3 p-2 border border-gray-200 rounded-lg flex items-center justify-between">
-              <span className="text-xs font-inter text-gray-600 truncate">
-                {formData.profile_image_file
-                  ? `New File: ${formData.profile_image_file.name}`
-                  : "Current Image Set"}
-              </span>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+            <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+              {profilePreviewUrl ? (
+                <img src={profilePreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+              )}
+            </div>
+            <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+              {member?.bod_id ? "Change Photo" : "Upload Photo"}
+              <input
+                type="file"
+                name="profile_image_file"
+                className="hidden"
+                onChange={handleFileChange}
+                required={isImageRequired && !formData.profile_image_file}
+                accept="image/*"
+              />
+            </label>
+            <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
+            {(formData.existing_profile_image || formData.profile_image_file) && (
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="text-red-500 hover:text-red-700 text-xs"
+                className="text-sm text-red-600 underline mt-3"
               >
-                [Remove/Clear]
+                Remove current image
               </button>
-            </div>
-          )}
-
-          <input
-            type="file"
-            name="profile_image_file"
-            onChange={handleFileChange}
-            required={isImageRequired && !formData.profile_image_file}
-            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
+            )}
+          </div>
         </div>
       </div>
 
@@ -227,6 +237,11 @@ const ProgramForm = ({ program, onSubmit, onCancel, isSaving }) => {
   };
 
   const isImageRequired = !program && !formData.existing_image;
+  const programPreviewUrl = formData.image_file
+    ? URL.createObjectURL(formData.image_file)
+    : formData.existing_image
+    ? `${SERVER_ROOT_URL}${formData.existing_image}`
+    : "";
 
   return (
     <form
@@ -333,34 +348,39 @@ const ProgramForm = ({ program, onSubmit, onCancel, isSaving }) => {
 
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Program Image{" "}
-            {isImageRequired && <span className="text-red-500">*</span>}
+            Program Image {isImageRequired && <span className="text-red-500">*</span>}
           </label>
 
-          {(formData.existing_image || formData.image_file) && (
-            <div className="relative mb-3 p-2 border border-gray-200 rounded-lg flex items-center justify-between">
-              <span className="text-xs text-gray-600 truncate">
-                {formData.image_file
-                  ? `New File: ${formData.image_file.name}`
-                  : "Current Image Set"}
-              </span>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+            <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+              {programPreviewUrl ? (
+                <img src={programPreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+              )}
+            </div>
+            <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+              {program?.program_id ? "Change Photo" : "Upload Photo"}
+              <input
+                type="file"
+                name="image_file"
+                className="hidden"
+                onChange={handleFileChange}
+                required={isImageRequired && !formData.image_file}
+                accept="image/*"
+              />
+            </label>
+            <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
+            {(formData.existing_image || formData.image_file) && (
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="text-red-500 hover:text-red-700 text-xs"
+                className="text-sm text-red-600 underline mt-3"
               >
-                [Remove]
+                Remove current image
               </button>
-            </div>
-          )}
-
-          <input
-            type="file"
-            name="image_file"
-            onChange={handleFileChange}
-            required={isImageRequired && !formData.image_file}
-            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100"
-          />
+            )}
+          </div>
         </div>
       </div>
 
@@ -429,6 +449,11 @@ const TeamMemberForm = ({ member, onSubmit, onCancel, isSaving }) => {
   };
 
   const isImageRequired = !member && !formData.existing_image;
+  const memberPreviewUrl = formData.image_file
+    ? URL.createObjectURL(formData.image_file)
+    : formData.existing_image
+    ? `${SERVER_ROOT_URL}${formData.existing_image}`
+    : "";
 
   return (
     <form
@@ -482,30 +507,36 @@ const TeamMemberForm = ({ member, onSubmit, onCancel, isSaving }) => {
             Image {isImageRequired && <span className="text-red-500">*</span>}
           </label>
 
-          {(formData.existing_image || formData.image_file) && (
-            <div className="relative mb-3 p-2 border border-gray-200 rounded-lg flex items-center justify-between">
-              <span className="text-xs text-gray-600 truncate">
-                {formData.image_file
-                  ? `New File: ${formData.image_file.name}`
-                  : "Current Image Set"}
-              </span>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+            <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+              {memberPreviewUrl ? (
+                <img src={memberPreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+              )}
+            </div>
+            <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+              {member?.id ? "Change Photo" : "Upload Photo"}
+              <input
+                type="file"
+                name="image_file"
+                className="hidden"
+                onChange={handleFileChange}
+                required={isImageRequired && !formData.image_file}
+                accept="image/*"
+              />
+            </label>
+            <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
+            {(formData.existing_image || formData.image_file) && (
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="text-red-500 text-xs"
+                className="text-sm text-red-600 underline mt-3"
               >
-                [Remove]
+                Remove current image
               </button>
-            </div>
-          )}
-
-          <input
-            type="file"
-            name="image_file"
-            onChange={handleFileChange}
-            required={isImageRequired && !formData.image_file}
-            className="mt-1 block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-          />
+            )}
+          </div>
         </div>
       </div>
 

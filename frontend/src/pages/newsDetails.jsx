@@ -38,12 +38,14 @@ const NewsDetail = () => {
       try {
         const data = await getNewsById(slug);
         setNews(data);
-        const resolvedId = slug;
-        const res = await fetch(`${API_BASE}/api/news/${resolvedId}/resources`);
-        if (res.ok) {
-          setResources(await res.json());
-        } else {
-          setResources([]);
+        // Use news_id to fetch resources
+        if (data?.news_id) {
+          const res = await fetch(`${API_BASE}/api/news/${data.news_id}/resources`);
+          if (res.ok) {
+            setResources(await res.json());
+          } else {
+            setResources([]);
+          }
         }
       } catch (err) {
         setError("News not found or failed to load.");
@@ -257,7 +259,7 @@ const NewsDetail = () => {
                 <section className="mt-14 border-t border-[#efe7db] pt-10">
                   <div className="mb-6">
                     <h2 className="mt-2 text-2xl font-black text-[#17213a] font-['Inter']">
-                      
+                      Related Videos
                     </h2>
                   </div>
 

@@ -245,6 +245,7 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
     slug: course?.slug || "",
     description: course?.description || "",
     level: course?.level || "",
+    price: course?.price ?? "",
     teacher_name: course?.teacher_name || "",
     seo_title: course?.seo_title || "",
     seo_description: course?.seo_description || "",
@@ -300,11 +301,11 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
 
   const isFileRequired = !course && !formData.existing_image_url;
 
-  const imageStatusText = formData.course_image_file
-    ? `New File: ${formData.course_image_file.name}`
+  const imagePreviewUrl = formData.course_image_file
+    ? URL.createObjectURL(formData.course_image_file)
     : formData.existing_image_url
-    ? "Current Image Set"
-    : "No Image Selected";
+    ? `${SERVER_ROOT_URL}${formData.existing_image_url}`
+    : "";
 
   const currentMainTeacherName = formData.teacher_name || "";
 
@@ -351,6 +352,22 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
               <option value="Basic">Basic</option>
               <option value="Advanced">Advanced</option>
             </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-1">
+            <label className={labelClass}>Price (NPR)</label>
+            <input
+              type="number"
+              name="price"
+              min="0"
+              step="0.01"
+              value={formData.price}
+              onChange={handleChange}
+              className={inputClass}
+              placeholder="5000"
+            />
           </div>
         </div>
 
@@ -402,37 +419,41 @@ const CourseForm = ({ course, onSubmit, onCancel, isSaving, teachers }) => {
           </div>
         </div>
 
-        <div className="border border-dashed border-indigo-400 p-6 rounded-xl bg-indigo-50 shadow-inner">
-          <label className="block text-xl font-playfair font-bold text-indigo-800 mb-3">
-            🖼️ Course Image{" "}
-            {isFileRequired && <span className="text-red-500">*</span>}
+        <div>
+          <label className="block text-sm font-semibold text-slate-700 mb-3">
+            Course Image {isFileRequired && <span className="text-red-500">*</span>}
           </label>
 
-          {(formData.existing_image_url || formData.course_image_file) && (
-            <div className="relative mb-4 p-4 border border-indigo-300 rounded-xl flex items-center justify-between bg-white shadow-md">
-              <span className="text-sm font-sans font-medium text-gray-700 truncate">
-                {imageStatusText}
-              </span>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
+            <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
+              {imagePreviewUrl ? (
+                <img src={imagePreviewUrl} className="w-full h-full object-cover" alt="Preview" />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+              )}
+            </div>
+            <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+              {course ? "Change Photo" : "Upload Photo"}
+              <input
+                type="file"
+                name="course_image_file"
+                className="hidden"
+                onChange={handleFileChange}
+                required={isFileRequired}
+                accept="image/*"
+              />
+            </label>
+            <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
+            {(formData.existing_image_url || formData.course_image_file) && (
               <button
                 type="button"
                 onClick={handleRemoveImage}
-                className="text-red-600 font-sans hover:text-red-700 text-sm font-semibold ml-4 p-2 rounded-lg hover:bg-red-50 transition"
+                className="text-sm text-red-600 underline mt-3"
               >
-                Clear Image
+                Remove current image
               </button>
-            </div>
-          )}
-
-          <input
-            type="file"
-            name="course_image_file"
-            onChange={handleFileChange}
-            required={isFileRequired}
-            className="mt-1 block w-full text-sm text-gray-600 file:mr-4 file:py-3 file:px-6 file:rounded-xl file:border-0 file:text-base file:font-sans file:font-semibold file:bg-indigo-100 file:text-indigo-700 hover:file:bg-indigo-200 cursor-pointer shadow-sm"
-          />
-          <p className="mt-2 text-xs font-sans text-gray-500">
-            Maximum file size 5MB. Formats: .png, .jpg, .jpeg, .webp.
-          </p>
+            )}
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -568,9 +589,16 @@ const CourseCardPublicPreview = ({ course, SERVER_BASE_URL }) => {
           >
             {course.level || "Basic"}
           </span>
-          <span className="text-sm font-sans text-indigo-700 font-bold">
-            {course.teacher_name || "Teacher Name"}
-          </span>
+          <div className="text-right">
+            <span className="block text-sm font-sans text-indigo-700 font-bold">
+              {course.teacher_name || "Teacher Name"}
+            </span>
+            <span className="block text-xs font-sans text-emerald-700 font-semibold">
+              {course.price !== null && course.price !== undefined && course.price !== ""
+                ? `NPR ${Number(course.price).toLocaleString()}`
+                : "Price on request"}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -629,6 +657,9 @@ export default function AdminCourses() {
       await fetchData();
     } catch (err) {
       const errorMsg =
+        err.data?.message ||
+        err.data?.error ||
+        err.message ||
         err.response?.data?.message ||
         err.response?.data?.error ||
         "An unknown error occurred.";
@@ -656,6 +687,9 @@ export default function AdminCourses() {
       fetchData();
     } catch (err) {
       const errorMsg =
+        err.data?.message ||
+        err.data?.error ||
+        err.message ||
         err.response?.data?.message ||
         err.response?.data?.error ||
         "Failed to delete course.";
@@ -733,7 +767,7 @@ export default function AdminCourses() {
                   <thead>
                     <tr className="bg-slate-50/50 border-b border-slate-200">
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Image</th>
-                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Course Title & Level</th>
+                      <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Course Title, Level & Price</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Main Teacher</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest">Class Schedules</th>
                       <th className="px-6 py-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest text-right">Actions</th>
@@ -752,6 +786,11 @@ export default function AdminCourses() {
                         <td className="px-6 py-5 text-sm font-bold text-slate-800">
                           {course.course_name}
                           <span className={`block text-xs font-medium mt-1 p-1 px-2 rounded-full w-fit ${course.level === "Advanced" ? "bg-orange-100 text-orange-800 border border-orange-200" : "bg-green-100 text-green-800 border border-green-200"}`}>{course.level}</span>
+                          <span className="block text-xs font-semibold mt-2 text-emerald-700">
+                            {course.price !== null && course.price !== undefined && course.price !== ""
+                              ? `NPR ${Number(course.price).toLocaleString()}`
+                              : "Price on request"}
+                          </span>
                         </td>
                         <td className="px-6 py-5 text-sm text-slate-700 font-medium">{course.teacher_name || "N/A"}</td>
                         <td className="px-6 py-5 text-sm text-slate-500">

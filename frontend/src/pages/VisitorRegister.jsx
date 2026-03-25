@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import RegisterService from "../admin/services/registerServices";
 import { getAllCourses } from "../admin/services/coursesService";
+import Seo from "../components/Seo";
 
 // Icon for the registration page
 const UserPlus = (props) => (
@@ -149,6 +150,12 @@ const VisitorRegister = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 font-['Roboto']">
+      <Seo
+        title="Student Registration | Join Sadhana Kala Kendra Programs"
+        description="Register for music, dance, and instrument courses at Sadhana Kala Kendra by submitting your enrollment details and preferred training program online."
+        keywords="Sadhana Kala Kendra registration, music class enrollment, dance course admission, student registration Nepal, performing arts admission"
+        canonicalPath="/register"
+      />
       <div className="container mx-auto max-w-2xl">
         {/* Title Section */}
         <h2 className="text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">

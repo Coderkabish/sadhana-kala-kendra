@@ -60,6 +60,7 @@ const AdminLayout = ({ onLogout, adminUsername = "Admin" }) => {
         { to: "/admin", label: "Sadhana Dashboard", icon: LayoutDashboard },
         { to: "/admin/register", label: "Registrations", icon: CheckSquare }, 
         { to: "/admin/courses", label: "Courses", icon: BookOpen },
+        { to: "/admin/gallery", label: "Gallery", icon: Image },
         { to: "/admin/teachers", label: "Teachers", icon: Users },
         { to: "/admin/activities", label: "Activities", icon: Grid },
         { to: "/admin/artists", label: "Artists", icon: UserCircle },

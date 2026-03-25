@@ -3,6 +3,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { getUpcomingEvents, getPastEvents } from "../admin/services/eventsService";
 import { getAllNews } from "../admin/services/newsService";
+import Seo from "../components/Seo";
 
 
 const Events = () => {
@@ -166,6 +167,12 @@ const Events = () => {
 
   return (
     <section className="py-16 md:py-20 bg-gray-50">
+      <Seo
+        title="Events and News Updates | Sadhana Kala Kendra Nepal"
+        description="See upcoming events, past programs, and latest institutional updates from Sadhana Kala Kendra, including performances, workshops, and cultural activities."
+        keywords="Sadhana Kala Kendra events, Nepal music events, dance workshops, cultural programs, art school news, upcoming performances"
+        canonicalPath="/events"
+      />
       {/* News Section */}
       <div className="max-w-7xl mx-auto mb-20 px-4">
         <div className="flex flex-col items-center justify-center mb-10 border-b border-gray-200 pb-8">

@@ -70,7 +70,7 @@ class CoursesModel {
         return course;
     }
 
-    static async create({ title, description, level, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
+    static async create({ title, description, level, price, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
         if (!title?.trim()) throw new Error("Course title is required");
         
         const connection = await db.getConnection(); // 🔧 Start transaction
@@ -84,13 +84,14 @@ class CoursesModel {
             const teacher_id = teacherRows[0]?.teacher_id || null;
 
             const [result] = await connection.query(
-                `INSERT INTO Courses (course_name, slug, description, level, teacher_id, image_url, seo_title, seo_description, seo_keywords)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                `INSERT INTO Courses (course_name, slug, description, level, price, teacher_id, image_url, seo_title, seo_description, seo_keywords)
+                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
                 [
                     title,
                     slug,
                     description || null,
                     level || null,
+                    price !== undefined && price !== null && price !== "" ? Number(price) : null,
                     teacher_id,
                     image_url || null,
                     seo_title || null,
@@ -132,7 +133,7 @@ class CoursesModel {
         }
     }
 
-    static async update(course_id, { title, description, level, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
+    static async update(course_id, { title, description, level, price, teacher_name, image_url, schedules, slug, seo_title, seo_description, seo_keywords }) {
         if (!course_id) throw new Error("Course ID is required for update.");
         if (!title?.trim()) throw new Error("Course title is required");
 
@@ -153,6 +154,7 @@ class CoursesModel {
                 slug,
                 description || null,
                 level || null,
+                price !== undefined && price !== null && price !== "" ? Number(price) : null,
                 teacher_id,
                 seo_title || null,
                 seo_description || null,
@@ -171,7 +173,7 @@ class CoursesModel {
 
             await connection.query(
                 `UPDATE Courses
-                 SET course_name = ?, slug = ?, description = ?, level = ?, teacher_id = ?, seo_title = ?, seo_description = ?, seo_keywords = ? ${updateImageClause}
+                 SET course_name = ?, slug = ?, description = ?, level = ?, price = ?, teacher_id = ?, seo_title = ?, seo_description = ?, seo_keywords = ? ${updateImageClause}
                  WHERE course_id = ?`,
                 params
             );

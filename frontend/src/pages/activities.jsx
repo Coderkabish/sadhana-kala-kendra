@@ -1,5 +1,6 @@
 import { getAllActivities } from "../admin/services/activitiesService";
 import React, { useEffect, useState, useRef } from "react";
+import Seo from "../components/Seo";
 
 
 // Define your YouTube channel URL here
@@ -251,6 +252,12 @@ const Activities = () => {
 
     return (
         <section className="py-16 md:py-20 bg-gray-50 font-['Roboto'] ">
+            <Seo
+                title="Creative Activities and Video Showcases | Sadhana Kala Kendra"
+                description="Watch creative activity videos from Sadhana Kala Kendra, including student showcases, class performances, and artistic highlights in music and dance training."
+                keywords="Sadhana Kala Kendra activities, dance showcase videos, music performance videos, arts training highlights, creative student activities"
+                canonicalPath="/activities"
+            />
             <div className="text-center mb-16 max-w-5xl mx-auto">
                 <h1 className="text-4xl md:text-5xl text-[#0f0f50] font-extrabold">
                     Creative <span className="text-[#cf0408]">Showcases</span> and Activities

@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicOffers } from "../services/offersService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
+import Seo from "../components/Seo";
 
 const buildImageUrl = (path) => {
   if (!path) return "";
@@ -44,37 +45,14 @@ const Offers = () => {
     fetchOffers();
   }, []);
 
-  const seoSource = useMemo(
-    () => offers.find((item) => item.seo_title || item.seo_description || item.seo_keywords) || null,
-    [offers]
-  );
-
-  useEffect(() => {
-    const previousTitle = document.title;
-    const metaDescription = document.querySelector("meta[name='description']");
-    const metaKeywords = document.querySelector("meta[name='keywords']");
-    const previousDescription = metaDescription?.getAttribute("content") || "";
-    const previousKeywords = metaKeywords?.getAttribute("content") || "";
-
-    if (seoSource?.seo_title) {
-      document.title = seoSource.seo_title;
-    }
-    if (metaDescription && seoSource?.seo_description) {
-      metaDescription.setAttribute("content", seoSource.seo_description);
-    }
-    if (metaKeywords && seoSource?.seo_keywords) {
-      metaKeywords.setAttribute("content", seoSource.seo_keywords);
-    }
-
-    return () => {
-      document.title = previousTitle;
-      if (metaDescription) metaDescription.setAttribute("content", previousDescription);
-      if (metaKeywords) metaKeywords.setAttribute("content", previousKeywords);
-    };
-  }, [seoSource]);
-
   return (
     <section className="py-16 md:py-20 bg-gray-50 min-h-screen">
+      <Seo
+        title="Current Offers and Discounts | Sadhana Kala Kendra"
+        description="Browse current offers, limited-time admissions, and special training opportunities at Sadhana Kala Kendra for music, dance, and performing arts students."
+        keywords="music school offers, dance class discounts, admission offers Nepal, Sadhana Kala Kendra offers, performing arts promotions"
+        canonicalPath="/offers"
+      />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-10">
         <div className="text-center mb-12">
           <h1 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#0f0f50] font-['Inter']">

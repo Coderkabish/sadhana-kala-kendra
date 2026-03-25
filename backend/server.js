@@ -21,6 +21,7 @@ import programsRoutes from "./routes/programsRoutes.js";
 import sitemapRoutes from "./routes/sitemapRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import registerRoutes from "./routes/registerRoutes.js";
+import galleryRoutes from "./routes/galleryRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -144,6 +145,9 @@ app.use("/api/activities", activitiesRoutes);
 app.use("/api/news", newsRoutes);
 app.use("/api/offers", offersRoutes);
 app.use("/api/programs", programsRoutes);
+app.use("/api/gallery", galleryRoutes);
+app.use("/api/gallary", galleryRoutes);
+app.use("/gallery", galleryRoutes);
 app.use("/api/register", registerRoutes);
 app.use("/api/admin", limiter, adminRoutes);
 app.use("/sitemap.xml", sitemapRoutes);

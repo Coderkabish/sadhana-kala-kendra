@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import { Link } from "react-router-dom";
 // ✅ KEPT necessary imports: heroImages, logo
 import { heroImages, logo, aboutVideo } from "../assets/assets";
+import Seo from "../components/Seo";
 
 // ✅ IMPORT backend services
 import { getAllArtists } from "../admin/services/artistsService";
@@ -82,22 +83,35 @@ const Home = () => {
     fetchHomeData();
   }, [fetchHomeData]);
 
+  const seoProps = {
+    title: "Sadhana Kala Kendra | Music, Dance and Performing Arts Academy in Nepal",
+    description:
+      "Sadhana Kala Kendra in Nepal offers music, dance, and instrument training with expert mentors, cultural programs, and student performances for all age groups.",
+    keywords:
+      "Sadhana Kala Kendra, music school Nepal, dance classes Nepal, vocal training, instrument classes, performing arts academy",
+    canonicalPath: "/",
+  };
+
   // Conditional render for loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-          <p className="text-xl text-[#191938] font-['Inter']">
-            Loading About Us content...
-          </p>
+      <>
+        <Seo {...seoProps} />
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
+            <p className="text-xl text-[#191938] font-['Inter']">
+              Loading homepage content...
+            </p>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
   return (
     // Set the secondary font (Roboto) as the default for the body
     <div className="min-h-screen bg-gray-100 font-['Roboto']">
+      <Seo {...seoProps} />
       {/* ================= HERO SECTION ================= */}
       <section className="relative h-[90vh] overflow-hidden">
         <img
@@ -476,7 +490,7 @@ const Home = () => {
                       {teacher.full_name}
                     </h3>
                     {/* Secondary Font: Roboto */}
-                    <p className="text-red-600 font-semibold mb-4 font-['Roboto']">
+                    <p className="text-gray-700 font-semibold mb-4 font-['Roboto']">
                       {teacher.specialization}
                     </p>
                     {/* Primary Font: Inter */}

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
-// Assuming this path and exports structure:
-import { heroImages, gallaryImages } from "../assets/assets"; 
+import { SERVER_ROOT_URL } from "../admin/services/api";
+import { getAllGalleryItems } from "../admin/services/galleryService";
+import Seo from "../components/Seo";
 
 // --- Configuration ---
 const FACEBOOK_URL = "https://www.facebook.com/sadhanakalakendranepal";
@@ -14,17 +15,26 @@ const FacebookIcon = (props) => (
 
 const Gallery = () => {
     const [selectedMedia, setSelectedMedia] = useState(null);
-
-    // Combine all photos - UPDATED LINE HERE
-    const photos = [
-        ...heroImages,
-        ...gallaryImages, // <-- Added gallaryImages here
-    ];
-
-
+    const [photos, setPhotos] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
         window.scrollTo(0, 0);
+
+        const fetchGallery = async () => {
+            try {
+                setLoading(true);
+                const items = await getAllGalleryItems();
+                setPhotos(Array.isArray(items) ? items : []);
+            } catch (err) {
+                setError("Failed to load gallery images.");
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchGallery();
     }, []);
 
     // Escape key handler for closing the modal (Good UX)
@@ -47,11 +57,17 @@ const Gallery = () => {
     }, [selectedMedia]);
     
     // Helper function to get the title
-    const getPhotoTitle = (index) => `Gallery Photo ${index + 1}`; // Added index + 1 for better title
+    const getPhotoTitle = (photo, index) => photo.title || `Gallery Photo ${index + 1}`;
 
 
     return (
         <section className="py-16 md:py-20 bg-gray-50">
+            <Seo
+                title="Photo Gallery | Sadhana Kala Kendra Performances and Activities"
+                description="View the Sadhana Kala Kendra gallery featuring student performances, classroom moments, events, and cultural highlights across music and dance programs."
+                keywords="Sadhana Kala Kendra gallery, music school photos, dance performance gallery, cultural event images, arts academy Nepal"
+                canonicalPath="/gallery"
+            />
             {/* Section Header */}
             <div className="text-center mb-12 md:mb-16 max-w-3xl mx-auto px-4">
                 <h2 className="text-3xl sm:text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">
@@ -65,22 +81,26 @@ const Gallery = () => {
             {/* Photo Gallery */}
             <div className="max-w-7xl mx-auto mb-16 px-4">
                 
-                {photos.length > 0 ? (
+                {loading ? (
+                    <div className="text-center py-10 text-xl text-gray-500">Loading gallery...</div>
+                ) : error ? (
+                    <div className="text-center py-10 text-xl text-red-600">{error}</div>
+                ) : photos.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                        {photos.map((img, index) => (
+                        {photos.map((photo, index) => (
                             <div
-                                key={`photo-${index}`}
+                                key={photo.media_id || `photo-${index}`}
                                 className="overflow-hidden rounded-2xl shadow-xl bg-white group cursor-pointer transform hover:scale-[1.02] transition-all duration-300 relative"
-                                onClick={() => setSelectedMedia({ type: "image", src: img, title: getPhotoTitle(index) })}
+                                onClick={() => setSelectedMedia({ type: "image", src: `${SERVER_ROOT_URL}${photo.image_url}`, title: getPhotoTitle(photo, index) })}
                             >
                                 <img
-                                    src={img}
-                                    alt={getPhotoTitle(index)}
+                                    src={`${SERVER_ROOT_URL}${photo.image_url}`}
+                                    alt={getPhotoTitle(photo, index)}
                                     loading="lazy"
                                     className="w-full h-48 sm:h-56 md:h-64 object-cover transition-opacity duration-300 group-hover:opacity-85"
                                 />
                                 <div className="p-3 absolute inset-0 bg-red bg-opacity-30 flex items-end opacity-10 group-hover:opacity-100 transition-opacity">
-                                    <p className="text-white font-medium text-lg truncate w-full">{getPhotoTitle(index)}</p>
+                                    <p className="text-white font-medium text-lg truncate w-full">{getPhotoTitle(photo, index)}</p>
                                 </div>
                             </div>
                         ))}

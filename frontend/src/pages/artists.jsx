@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { getAllArtists } from "../admin/services/artistsService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
+import Seo from "../components/Seo";
 
 const Artists = () => {
     const [artistsList, setArtistsList] = useState([]);
@@ -27,29 +28,45 @@ const Artists = () => {
         fetchArtists();
     }, [fetchArtists]);
 
+    const seoProps = {
+        title: "Featured Artists and Alumni | Sadhana Kala Kendra",
+        description:
+            "Discover featured artists and alumni of Sadhana Kala Kendra, showcasing performance journeys, creative achievements, and training rooted in Nepali arts.",
+        keywords:
+            "Sadhana Kala Kendra artists, music school alumni, featured performers Nepal, artist profiles, performing arts alumni",
+        canonicalPath: "/artists",
+    };
+
       if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-          <p className="text-xl text-[#191938] font-['Inter']">
-            Loading About Us content...
-          </p>
+            <>
+                <Seo {...seoProps} />
+                <div className="min-h-screen flex items-center justify-center bg-white">
+                    <div className="text-center">
+                        <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
+                        <p className="text-xl text-[#191938] font-['Inter']">
+                            Loading artists content...
+                        </p>
+                    </div>
         </div>
-      </div>
+            </>
     );
   }
 
     if (error) {
         return (
-            <section className="py-20 bg-gray-50 min-h-screen">
-                <div className="text-center text-xl text-red-600">{error}</div>
-            </section>
+                        <>
+                                <Seo {...seoProps} />
+                                <section className="py-20 bg-gray-50 min-h-screen">
+                                        <div className="text-center text-xl text-red-600">{error}</div>
+                                </section>
+                        </>
         );
     }
 
     return (
         <section className="py-20 bg-gray-50">
+                        <Seo {...seoProps} />
             <div className="max-w-7xl mx-auto px-6 lg:px-12">
 
                 {/* ===== PAGE HEADER ===== */}

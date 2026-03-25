@@ -135,20 +135,20 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
         <h3 className="text-lg font-bold text-slate-800">{news?.news_id ? "📝 Edit News" : "📰 Add News"}</h3>
       </div>
       <div className="p-5 md:p-8 grid grid-cols-1 lg:grid-cols-12 gap-10">
-        {/* Left: Image Upload Preview (matches Teacher page) */}
+        {/* Left: Image Upload Preview */}
         <div className="lg:col-span-4 flex flex-col items-center justify-center border-2 border-dashed border-slate-200 rounded-2xl p-6 bg-slate-50/50">
           <div className="w-32 h-32 rounded-full overflow-hidden mb-4 border-4 border-white shadow-md bg-slate-200">
-            <img
-              src={imagePreview || (formData.image && typeof formData.image === 'string' ? formData.image : "https://via.placeholder.com/128x128?text=No+Image")}
-              alt="Preview"
-              className="w-full h-full object-cover"
-            />
+            {imagePreview ? (
+              <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-400 text-xs">No Photo</div>
+            )}
           </div>
-          <label className="mt-2 w-full flex flex-col items-center cursor-pointer text-indigo-600 hover:text-indigo-800">
-            <span>Change Photo</span>
+          <label className="cursor-pointer bg-white px-4 py-2 border border-slate-300 rounded-lg text-sm font-semibold hover:bg-slate-50 transition shadow-sm">
+            {news?.news_id ? "Change Photo" : "Upload Photo"}
             <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
           </label>
-          <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">Recommended: 400x400px (JPG/PNG)</p>
+          <p className="text-[10px] text-slate-400 mt-3 uppercase tracking-tighter">JPG, PNG or WebP</p>
         </div>
         {/* Extra Images */}
         <div className="lg:col-span-8">
@@ -159,7 +159,10 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
                 <img src={typeof img === 'string' ? img : (extraImagePreviews[idx] || "https://via.placeholder.com/80x80?text=No+Image")}
                   alt="Extra Preview"
                   className="w-20 h-20 object-contain rounded-lg border border-slate-200 bg-slate-100" />
-                <input type="file" accept="image/*" onChange={e => handleExtraImagesChange(e, idx)} className="block text-xs" />
+                <label className="cursor-pointer bg-white px-3 py-1.5 border border-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-50 transition shadow-sm">
+                  Change Photo
+                  <input type="file" accept="image/*" onChange={e => handleExtraImagesChange(e, idx)} className="hidden" />
+                </label>
                 <button type="button" onClick={() => removeExtraImage(idx)} className="text-xs text-red-600 hover:underline">Remove</button>
               </div>
             ))}

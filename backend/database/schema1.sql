@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS Courses (
     description TEXT,
     image_url VARCHAR(255),
     level VARCHAR(100),
+    price DECIMAL(10,2),
     teacher_id INT,
     seo_title VARCHAR(255),
     seo_description TEXT,
@@ -181,14 +182,9 @@ CREATE TABLE IF NOT EXISTS Programs (
 CREATE TABLE IF NOT EXISTS Gallery (
     media_id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(100),
-    description TEXT,
-    media_type ENUM('Image', 'Video') DEFAULT 'Image',
-    file_url VARCHAR(255) NOT NULL,
-    category ENUM('Event', 'Course', 'Activity', 'General') DEFAULT 'General',
-    course_id INT,
-    upload_date DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (course_id) REFERENCES Courses(course_id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+    image_url VARCHAR(255) NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS team_members (

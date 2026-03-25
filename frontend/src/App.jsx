@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from "react";
+import React, { Suspense, lazy, useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 
 // ===== Components =====
@@ -38,6 +38,11 @@ const RouteFallback = () => (
 const AppContent = () => {
   const location = useLocation();
   const isAdminRoute = location.pathname.startsWith("/admin");
+
+  useEffect(() => {
+    // Signal prerenderer after route content has mounted.
+    document.dispatchEvent(new Event("react-prerender-ready"));
+  }, [location.pathname]);
 
   return (
     <div className="font-sans">

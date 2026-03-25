@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { getAllTeachers } from "../admin/services/teachersService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
+import Seo from "../components/Seo";
 
 const SERVER_BASE_URL = SERVER_ROOT_URL;
 const TEACHER_IMAGE_FALLBACK = "https://via.placeholder.com/300x400?text=Teacher+Image";
@@ -64,6 +65,12 @@ const Teachers = () => {
 
   return (
     <section className="py-20 bg-gray-50 min-h-screen px-6 lg:px-16 font-['Roboto']">
+      <Seo
+        title="Our Teachers and Instructors | Sadhana Kala Kendra Nepal"
+        description="Meet the experienced teachers of Sadhana Kala Kendra guiding students in music, dance, and performing arts through practical, disciplined, and creative training."
+        keywords="music teachers Nepal, dance instructors Nepal, Sadhana Kala Kendra faculty, performing arts mentors, vocal and instrument trainers"
+        canonicalPath="/teachers"
+      />
       <div className="max-w-7xl mx-auto text-center mb-16">
         <h1 className="text-4xl md:text-5xl font-extrabold text-[#0f0f50] mb-4 font-['Inter']">
           Meet Our <span className="text-red-600">Teachers</span>
