@@ -20,6 +20,11 @@ export const createBOD = async (bodData) => {
     formData.append('name', bodData.name || '');
     formData.append('designation', bodData.designation || '');
     formData.append('bio', bodData.bio || '');
+    formData.append('details_content', bodData.details_content || '');
+    formData.append('slug', bodData.slug || '');
+    formData.append('seo_title', bodData.seo_title || '');
+    formData.append('seo_description', bodData.seo_description || '');
+    formData.append('seo_keywords', bodData.seo_keywords || '');
     
     // Append the image file with the correct field name that multer expects
     if (bodData.profile_image_file) {
@@ -45,6 +50,11 @@ export const updateBOD = async (id, bodData) => {
     formData.append('name', bodData.name || '');
     formData.append('designation', bodData.designation || '');
     formData.append('bio', bodData.bio || '');
+    formData.append('details_content', bodData.details_content || '');
+    formData.append('slug', bodData.slug || '');
+    formData.append('seo_title', bodData.seo_title || '');
+    formData.append('seo_description', bodData.seo_description || '');
+    formData.append('seo_keywords', bodData.seo_keywords || '');
     
     // Only append new image if provided
     if (bodData.profile_image_file) {
@@ -99,7 +109,6 @@ export const createTeamMember = async (data) => {
     // Append text fields
     formData.append('name', data.name || '');
     formData.append('subtitle', data.subtitle || '');
-    formData.append('description', data.description || '');
     
     // Append the image file with the correct field name that multer expects
     if (data.image_file) {
@@ -124,7 +133,6 @@ export const updateTeamMember = async (id, data) => {
     // Append text fields
     formData.append('name', data.name || '');
     formData.append('subtitle', data.subtitle || '');
-    formData.append('description', data.description || '');
     
     // Only append new image if provided
     if (data.image_file) {
@@ -231,6 +239,6 @@ export const deleteProgram = async (id) => {
         const response = await api.delete(`${API_URL}/programs/${id}`);
         return response.data;
     } catch (error) {
-  handleError(error);
-}
+        throw handleError(error);
+    }
 };

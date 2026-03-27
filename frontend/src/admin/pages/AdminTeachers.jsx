@@ -6,6 +6,7 @@ import {
   deleteTeacher,
 } from "../services/teachersService";
 import { SERVER_ROOT_URL } from "../services/api";
+import PageLoader from "../../components/PageLoader";
 
 /** * PROFESSIONAL UI UTILS 
  */
@@ -141,7 +142,7 @@ export default function AdminTeachers() {
       const data = await getAllTeachers();
       setTeachers(data);
     } catch (err) {
-      setError("Failed to synchronize data with server.");
+      setError(err?.message || "Failed to synchronize data with server.");
     } finally {
       setLoading(false);
     }
@@ -163,7 +164,7 @@ export default function AdminTeachers() {
       setEditingTeacher(null);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || "Operation failed.");
+      setError(err?.message || "Operation failed.");
     } finally {
       setIsSaving(false);
     }
@@ -176,7 +177,7 @@ export default function AdminTeachers() {
       setMessage("Record removed.");
       fetchData();
     } catch (err) {
-      setError("Delete operation failed.");
+      setError(err?.message || "Delete operation failed.");
     }
   };
 
@@ -229,10 +230,7 @@ export default function AdminTeachers() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-20 text-center">
-                <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-500 font-medium">Synchronizing database...</p>
-              </div>
+              <PageLoader message="Synchronizing database..." />
             ) : teachers.length > 0 ? (
               <table className="w-full text-left border-collapse">
                 <thead>

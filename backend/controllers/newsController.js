@@ -56,7 +56,7 @@ class NewsController {
 
   static async create(req, res, next) {
     try {
-      const { title, content, news_date, image_url, resources, slug, seo_title, seo_description, seo_keywords } = req.body;
+      const { title, rich_content, news_date, image_url, resources, slug, seo_title, seo_description, seo_keywords } = req.body;
 
       if (!title || !title.trim()) {
         return res.status(400).json({ message: "Title is required." });
@@ -70,7 +70,7 @@ class NewsController {
       const id = await NewsModel.create({
         title,
         slug: slugify(slug || title),
-        content,
+        rich_content,
         news_date,
         image_url: normalizedImageUrl,
         seo_title,
@@ -141,7 +141,7 @@ class NewsController {
 
   static async update(req, res, next) {
     try {
-      const { title, content, news_date, image_url, resources, slug, seo_title, seo_description, seo_keywords } = req.body;
+      const { title, content, rich_content, news_date, image_url, resources, slug, seo_title, seo_description, seo_keywords } = req.body;
 
       const imageFile = req.files?.image?.[0];
       const normalizedImageUrl = imageFile
@@ -151,7 +151,7 @@ class NewsController {
       await NewsModel.update(req.params.id, {
         title,
         slug: slug !== undefined || title !== undefined ? slugify(slug || title) : undefined,
-        content,
+        rich_content,
         news_date,
         image_url: normalizedImageUrl,
         seo_title,

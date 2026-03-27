@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get("/", OffersController.getPublic);
 router.get("/admin/all", adminAuth, OffersController.getAllForAdmin);
+router.get("/course/:courseId", OffersController.getByCourse);
 router.get("/:slug", OffersController.getById);
 
 router.post("/", adminAuth, uploadMedia.single("image"), OffersController.create);

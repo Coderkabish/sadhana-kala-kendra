@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import api, { SERVER_ROOT_URL } from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
+import DetailPageLayout from "../components/DetailPageLayout";
 
 const asImage = (path) => {
   if (!path) return "";
@@ -26,14 +29,24 @@ const ArtistDetail = () => {
     load();
   }, [slug]);
 
-  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
-  if (!artist) return <div className="p-10 text-center">Loading...</div>;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <EmptyState
+          title="No Artist Found"
+          description={error}
+          className="max-w-2xl"
+        />
+      </div>
+    );
+  }
+  if (!artist) return <PageLoader message="Loading artist details..." />;
 
   const title = artist.seo_title || `${artist.full_name} | Sadhana Kala Kendra`;
   const description = artist.seo_description || artist.bio || "Artist profile";
 
   return (
-    <section className="max-w-4xl mx-auto px-4 py-12">
+    <>
       <Seo
         title={title}
         description={description}
@@ -46,12 +59,24 @@ const ArtistDetail = () => {
           description,
         }}
       />
-      {artist.profile_image ? (
-        <img src={asImage(artist.profile_image)} alt={artist.full_name} className="w-full h-72 object-cover rounded-xl mb-6" />
-      ) : null}
-      <h1 className="text-3xl font-bold mb-3">{artist.full_name}</h1>
-      <p className="text-gray-700">{artist.bio}</p>
-    </section>
+
+      <DetailPageLayout
+        backTo="/artists"
+        backLabel="Back to all artists"
+        imageSrc={artist.profile_image ? asImage(artist.profile_image) : ""}
+        imageAlt={artist.full_name}
+        title={artist.full_name}
+        description={artist.bio || "Artist profile details will be updated soon."}
+        actions={(
+          <Link
+            to="/artists"
+            className="inline-flex items-center justify-center border border-[#191938] text-[#191938] hover:bg-[#191938] hover:text-white font-semibold px-6 py-3 rounded-full transition"
+          >
+            Explore More Artists
+          </Link>
+        )}
+      />
+    </>
   );
 };
 

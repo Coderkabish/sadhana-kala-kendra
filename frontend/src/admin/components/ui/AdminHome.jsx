@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import Cookies from 'js-cookie'; 
 import { useNavigate } from "react-router-dom"; // Add this import
+import PageLoader from "../../../components/PageLoader";
 
 // Assuming these are the correct paths for your project structure
 import { getAllBOD, getAllPrograms } from "../../services/aboutService.js"; 
@@ -68,7 +69,7 @@ const StatCard = ({ title, value, color, icon: Icon, onClick, isClickable }) => 
 
 // --- Loading Skeleton ---
 const StatCardSkeleton = () => (
-    <div className="p-6 rounded-2xl shadow-lg bg-white/50 border-t-4 border-gray-300 animate-pulse flex flex-col space-y-3 h-[136px]">
+    <div className="p-6 rounded-2xl shadow-lg bg-white/50 border-t-4 border-gray-300 animate-pulse flex flex-col space-y-3 h-34">
         <div className="flex items-center justify-between">
             <div className="w-12 h-12 bg-gray-300 rounded-full"></div>
             <div className="h-8 bg-gray-300 rounded w-1/4"></div>
@@ -103,7 +104,7 @@ const AlertCard = ({ count, message, color = "orange" }) => {
 
     return (
         <div className={`p-4 rounded-lg border ${colorClasses[color]} flex items-start space-x-3`}>
-            <Icons.AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+            <Icons.AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
             <div>
                 <p className="font-semibold text-sm">{count} {message}</p>
             </div>
@@ -256,7 +257,7 @@ const AdminHome = () => {
             {error && (
                 <div className="bg-red-50 border-l-4 border-red-500 text-red-800 px-6 py-4 rounded-lg mb-8 shadow-md">
                     <div className="flex items-start space-x-3">
-                        <Icons.AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                        <Icons.AlertCircle className="w-5 h-5 mt-0.5 shrink-0" />
                         <div>
                             <p className="font-semibold text-lg">Error Loading Data</p>
                             <p className="text-sm mt-1">{error}</p>
@@ -349,10 +350,7 @@ const AdminHome = () => {
                     </div>
                     
                     {loading ? (
-                        <div className="flex items-center justify-center py-16">
-                            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-slate-800"></div>
-                            <p className="ml-4 text-slate-600">Loading analytics...</p>
-                        </div>
+                        <PageLoader message="Loading analytics..." />
                     ) : (
                         <div className="space-y-8">
                             {/* Summary Stats Bar */}

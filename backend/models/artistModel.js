@@ -73,8 +73,8 @@ class ArtistModel {
       values.push(seo_keywords);
     }
 
-    // Only update if a **new file** was uploaded
-    if (profile_image !== null) {
+    // Only update profile_image if a new file was uploaded
+    if (profile_image !== undefined) {
       fields.push("profile_image = ?");
       values.push(profile_image);
     }

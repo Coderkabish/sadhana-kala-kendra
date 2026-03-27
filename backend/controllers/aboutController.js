@@ -70,6 +70,16 @@ class AboutController {
         }
     }
 
+    static async getBODBySlug(req, res) {
+        try {
+            const bodMember = await AboutModel.getBODBySlug(req.params.slug);
+            if (!bodMember) return res.status(404).json({ message: "BOD member not found." });
+            res.status(200).json(bodMember);
+        } catch {
+            res.status(500).json({ message: "Failed to fetch BOD member." });
+        }
+    }
+
     static async createBOD(req, res) {
         const profile_image = AboutController.getImagePath(req);
         const bodData = { ...req.body, profile_image };

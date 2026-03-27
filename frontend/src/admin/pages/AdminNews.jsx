@@ -1,5 +1,7 @@
 
 import React, { useState, useEffect, useRef } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import {
   getAllNews,
   getNewsResources,
@@ -8,6 +10,7 @@ import {
   deleteNews,
 } from "../services/newsService";
 import { SERVER_ROOT_URL } from "../services/api";
+import PageLoader from "../../components/PageLoader";
 
 const LucideIcon = ({ children }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">{children}</svg>
@@ -21,7 +24,7 @@ const formatNewsDataForForm = (news) => ({
   news_id: news.news_id || null,
   title: news.title || "",
   slug: news.slug || "",
-  content: news.content || "",
+  rich_content: news.rich_content || "",
   news_date: news.news_date ? new Date(news.news_date).toISOString().split("T")[0] : "",
   image_url: news.image_url || "",
   seo_title: news.seo_title || "",
@@ -35,6 +38,11 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
       const { name, value } = e.target;
       setFormData((prev) => ({ ...prev, [name]: value }));
     };
+
+    const handleRichContentChange = (value) => {
+      setFormData((prev) => ({ ...prev, rich_content: value }));
+    };
+
   const [formData, setFormData] = useState(formatNewsDataForForm(news || {}));
   const [imageFile, setImageFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(() => {
@@ -197,8 +205,28 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
             <input type="date" name="news_date" value={formData.news_date} onChange={handleChange} required className={inputStyle} />
           </div>
           <div>
-            <label className={labelStyle}>Content</label>
-            <textarea name="content" value={formData.content} onChange={handleChange} rows="3" className={inputStyle} placeholder="Write news details..."></textarea>
+            <label className={labelStyle}>Rich Content (Formatted)</label>
+            <div className="quill-editor-wrapper border border-slate-300 rounded-md overflow-hidden">
+              <ReactQuill
+                value={formData.rich_content}
+                onChange={handleRichContentChange}
+                modules={{
+                  toolbar: [
+                    [{ header: [1, 2, 3, false] }],
+                    ["bold", "italic", "underline", "strike"],
+                    [{ list: "ordered" }, { list: "bullet" }],
+                    [{ indent: "-1" }, { indent: "+1" }],
+                    ["blockquote", "code-block"],
+                    ["link"],
+                    ["clean"],
+                  ],
+                }}
+                placeholder="Enter formatted news content with rich formatting..."
+                theme="snow"
+                className="bg-white"
+              />
+            </div>
+            <p className="text-xs text-slate-400 mt-2">Format your content with bold, italic, lists, and links. This will be displayed on the public news page.</p>
           </div>
           <div>
             <label className={labelStyle}>SEO Title</label>
@@ -250,7 +278,7 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
       const data = await getAllNews();
       setNewsList(data);
     } catch (err) {
-      setError("Failed to sync news records.");
+      setError(err?.message || "Failed to sync news records.");
     } finally {
       setLoading(false);
     }
@@ -364,10 +392,7 @@ const NewsForm = ({ news, onSubmit, onCancel, isSaving }) => {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-16 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
-              </div>
+              <PageLoader message="Syncing records..." />
             ) : newsList.length > 0 ? (
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
                 <table className="w-full text-left border-collapse min-w-175">

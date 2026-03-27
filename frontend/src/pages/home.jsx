@@ -1,8 +1,10 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 // ✅ KEPT necessary imports: heroImages, logo
 import { heroImages, logo, aboutVideo } from "../assets/assets";
 import Seo from "../components/Seo";
+import EmptyState from "../components/EmptyState";
+import PageLoader from "../components/PageLoader";
 
 // ✅ IMPORT backend services
 import { getAllArtists } from "../admin/services/artistsService";
@@ -13,6 +15,7 @@ import { getPublicOffers } from "../admin/services/offersService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 
 const Home = () => {
+  const navigate = useNavigate();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [artistsList, setArtistsList] = useState([]);
   const [coursesList, setCoursesList] = useState([]);
@@ -97,14 +100,7 @@ const Home = () => {
     return (
       <>
         <Seo {...seoProps} />
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-            <p className="text-xl text-[#191938] font-['Inter']">
-              Loading homepage content...
-            </p>
-          </div>
-        </div>
+        <PageLoader message="Loading homepage content..." />
       </>
     );
   }
@@ -232,9 +228,10 @@ const Home = () => {
       </section>
 
       {/* --- Horizontal Rule added for better visual separation --- */}
-      <hr className="border-t border-gray-200" />
+      {offersList.length > 0 && <hr className="border-t border-gray-200" />}
 
       {/* ================= OFFERS SECTION ================= */}
+      {offersList.length > 0 && (
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-6 lg:px-12 text-center">
           <div className="text-center mb-14">
@@ -247,11 +244,19 @@ const Home = () => {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {offersList.length > 0 ? (
-              offersList.map((offer) => (
+            {offersList.map((offer) => (
                 <div
                   key={offer.offer_id}
-                  className="bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left"
+                  className={`bg-white border border-gray-200 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left ${offer.slug ? "cursor-pointer" : ""}`}
+                  onClick={() => offer.slug && navigate(`/offers/${offer.slug}`)}
+                  role={offer.slug ? "button" : undefined}
+                  tabIndex={offer.slug ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (offer.slug && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      navigate(`/offers/${offer.slug}`);
+                    }
+                  }}
                 >
                   <div className="h-52 overflow-hidden bg-gray-100">
                     {offer.image_url ? (
@@ -269,38 +274,36 @@ const Home = () => {
                     <h3 className="text-2xl font-bold mb-1 text-[#191938] font-['Inter'] line-clamp-2">
                       {offer.title}
                     </h3>
-                    {offer.subtitle && (
-                      <p className="text-red-600 font-semibold mb-2 font-['Roboto']">{offer.subtitle}</p>
-                    )}
                     <p className="text-gray-700 mb-4 font-['Roboto'] line-clamp-3">
                       {offer.description}
                     </p>
-                    {offer.slug ? (
-                      <Link
-                        to={`/offers/${offer.slug}`}
-                        className="inline-block mr-3 text-[#191938] font-semibold underline"
-                      >
-                        View Details
-                      </Link>
-                    ) : null}
-                    {offer.cta_link && (
-                      <a
-                        href={normalizeCtaUrl(offer.cta_link)}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="inline-block bg-[#191938] hover:bg-red-600 text-white font-semibold py-2 px-5 rounded-full transition-all duration-300"
-                      >
-                        {offer.cta_text || "Know More"}
-                      </a>
-                    )}
+                    <div className="mt-5 flex items-center justify-between gap-3">
+                      {offer.slug ? (
+                        <Link
+                          to={`/offers/${offer.slug}`}
+                          className="text-indigo-700 hover:text-indigo-900 font-semibold"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          View Details
+                        </Link>
+                      ) : (
+                        <span></span>
+                      )}
+                      {offer.cta_link && (
+                        <a
+                          href={normalizeCtaUrl(offer.cta_link)}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-block bg-[#191938] hover:bg-red-600 text-white font-semibold py-2 px-5 rounded-full transition-all duration-300"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {offer.cta_text || "Know More"}
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
-              ))
-            ) : (
-              <p className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-                No active offers available right now.
-              </p>
-            )}
+              ))}
           </div>
 
           <div className="text-center mt-12">
@@ -313,9 +316,10 @@ const Home = () => {
           </div>
         </div>
       </section>
+      )}
 
       {/* --- Horizontal Rule added for better visual separation --- */}
-      <hr className="border-t border-gray-200" />
+      {offersList.length > 0 && <hr className="border-t border-gray-200" />}
 
       {/* ================= PRIDE SECTION (ARTISTS) ================= */}
       <section className="py-20 bg-red-50/25">
@@ -337,7 +341,16 @@ const Home = () => {
               artistsList.slice(0, 6).map((artist) => (
                 <div
                   key={artist.artist_id}
-                  className="bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left"
+                  className={`bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left ${artist.slug ? "cursor-pointer" : ""}`}
+                  onClick={() => artist.slug && navigate(`/artists/${artist.slug}`)}
+                  role={artist.slug ? "button" : undefined}
+                  tabIndex={artist.slug ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (artist.slug && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      navigate(`/artists/${artist.slug}`);
+                    }
+                  }}
                 >
                   <div className="h-64 overflow-hidden">
                     <img
@@ -365,10 +378,10 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              // Secondary Font: Roboto
-              <p className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-                No artists are currently featured !
-              </p>
+              <EmptyState
+                title="No Artists Found"
+                description="Check back soon for featured artists and alumni updates."
+              />
             )}
           </div>
 
@@ -406,7 +419,16 @@ const Home = () => {
               coursesList.slice(0, 6).map((course) => (
                 <div
                   key={course.course_id}
-                  className="bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left"
+                  className={`bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left ${course.slug ? "cursor-pointer" : ""}`}
+                  onClick={() => course.slug && navigate(`/courses/${course.slug}`)}
+                  role={course.slug ? "button" : undefined}
+                  tabIndex={course.slug ? 0 : undefined}
+                  onKeyDown={(e) => {
+                    if (course.slug && (e.key === "Enter" || e.key === " ")) {
+                      e.preventDefault();
+                      navigate(`/courses/${course.slug}`);
+                    }
+                  }}
                 >
                   <div className="h-48 overflow-hidden">
                     <img
@@ -433,9 +455,10 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              <p className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-                No courses are currently listed !
-              </p>
+              <EmptyState
+                title="No Courses Found"
+                description="Please check back soon for our latest class offerings."
+              />
             )}
           </div>
 
@@ -498,10 +521,10 @@ const Home = () => {
                 </div>
               ))
             ) : (
-              // Secondary Font: Roboto
-              <p className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-                No teachers are currently listed !
-              </p>
+              <EmptyState
+                title="No Teachers Found"
+                description="Please check back soon for faculty updates."
+              />
             )}
           </div>
 

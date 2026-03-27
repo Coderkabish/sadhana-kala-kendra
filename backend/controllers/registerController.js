@@ -130,7 +130,7 @@ class RegisterController {
     }
 
     static async handlePublicRegistration(req, res, next) {
-    const { full_name, email, phone, address, age, occupation, photo, course_id } = req.body;
+    const { full_name, email, phone, address, age, occupation, course_id } = req.body;
 
     if (!full_name || !email || !phone || !course_id) {
         return res.status(400).json({ 
@@ -138,7 +138,7 @@ class RegisterController {
         });
     }
 
-    const studentData = { full_name, email, phone, address, age, occupation, photo };
+    const studentData = { full_name, email, phone, address, age, occupation };
 
     try {
         const { student_id, registration_id } = await RegisterModel.createStudentAndRegistration(studentData, course_id);

@@ -8,6 +8,8 @@ import { Footer } from "./components/footer.jsx";
 // ===== User Pages =====
 const Home = lazy(() => import("./pages/home.jsx"));
 const About = lazy(() => import("./pages/about.jsx"));
+const AboutProgramDetail = lazy(() => import("./pages/aboutProgramDetail.jsx"));
+const AboutBodDetails = lazy(() => import("./pages/aboutBodDetails.jsx"));
 const Courses = lazy(() => import("./pages/courses.jsx"));
 const Activities = lazy(() => import("./pages/activities.jsx"));
 const Events = lazy(() => import("./pages/events.jsx"));
@@ -25,14 +27,7 @@ const NotFound = lazy(() => import("./pages/NotFound.jsx"));
 // ===== Admin =====
 const AdminRoutes = lazy(() => import("./admin/AdminRoutes"));
 
-const RouteFallback = () => (
-  <div className="min-h-[50vh] flex items-center justify-center bg-gray-50">
-    <div className="text-center">
-      <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[#cf0408] mx-auto mb-3"></div>
-      <p className="text-sm text-gray-600">Loading page...</p>
-    </div>
-  </div>
-);
+const RouteFallback = () => null;
 
 
 const AppContent = () => {
@@ -40,6 +35,9 @@ const AppContent = () => {
   const isAdminRoute = location.pathname.startsWith("/admin");
 
   useEffect(() => {
+    // Keep page transitions consistent: always start at the top on route change.
+    window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
     // Signal prerenderer after route content has mounted.
     document.dispatchEvent(new Event("react-prerender-ready"));
   }, [location.pathname]);
@@ -55,6 +53,8 @@ const AppContent = () => {
             {/* User Routes */}
             <Route path="/" element={<Home />} />
             <Route path="/about" element={<About />} />
+            <Route path="/about/bod/:slug" element={<AboutBodDetails />} />
+            <Route path="/about/:slug" element={<AboutProgramDetail />} />
             <Route path="/courses" element={<Courses />} />
             <Route path="/activities" element={<Activities />} />
             <Route path="/events" element={<Events />} />

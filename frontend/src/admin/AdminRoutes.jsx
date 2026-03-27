@@ -13,6 +13,7 @@ import AdminNews from "../admin/pages/AdminNews";
 import AdminOffers from "../admin/pages/AdminOffers";
 import AdminGallery from "../admin/pages/AdminGallery";
 import api, { setUnauthorizedRedirectCallback } from "../admin/services/api";
+import PageLoader from "../components/PageLoader";
 
 const AdminLogin = React.lazy(() => import("../admin/pages/AdminLogin"));
 
@@ -80,11 +81,7 @@ const AdminRoutes = () => {
 
     const ProtectedRoute = ({ element }) => {
         if (loading) {
-            return (
-                <div className="flex items-center justify-center min-h-screen">
-                    <div className="text-lg">Loading...</div>
-                </div>
-            );
+            return <PageLoader message="Loading admin panel..." />;
         }
         
         if (!isAuthenticated) {
@@ -100,9 +97,7 @@ const AdminRoutes = () => {
                 path="login"
                 element={
                     loading ? (
-                        <div className="flex items-center justify-center min-h-screen">
-                            <div className="text-lg">Loading...</div>
-                        </div>
+                        <PageLoader message="Loading admin panel..." />
                     ) : isAuthenticated ? (
                         <Navigate to="/admin" replace />
                     ) : (

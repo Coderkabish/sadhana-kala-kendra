@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useCallback } from "react";
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
 import { SERVER_ROOT_URL } from "../services/api";
 import {
   getAllBOD,
@@ -14,6 +16,7 @@ import {
   updateTeamMember,
   deleteTeamMember,
 } from "../services/aboutService";
+import PageLoader from "../../components/PageLoader";
 
 const LucideIcon = ({ children }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">{children}</svg>
@@ -35,6 +38,11 @@ const BODForm = ({ member, onSubmit, onCancel, isSaving }) => {
     name: member?.name || "",
     designation: member?.designation || "",
     bio: member?.bio || "",
+    details_content: member?.details_content || "",
+    slug: member?.slug || "",
+    seo_title: member?.seo_title || "",
+    seo_description: member?.seo_description || "",
+    seo_keywords: member?.seo_keywords || "",
     profile_image_file: null,
     existing_profile_image: member?.profile_image || "",
   });
@@ -42,6 +50,10 @@ const BODForm = ({ member, onSubmit, onCancel, isSaving }) => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleDetailsChange = (value) => {
+    setFormData((prev) => ({ ...prev, details_content: value }));
   };
 
   const handleFileChange = (e) => {
@@ -118,6 +130,91 @@ const BODForm = ({ member, onSubmit, onCancel, isSaving }) => {
             value={formData.bio}
             onChange={handleChange}
             required
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Detailed Content (Formatted)
+          </label>
+          <div className="prose prose-sm max-w-none quill-editor-wrapper border border-gray-300 rounded-md overflow-hidden">
+            <ReactQuill
+              value={formData.details_content}
+              onChange={handleDetailsChange}
+              modules={{
+                toolbar: [
+                  [{ header: [1, 2, 3, false] }],
+                  ["bold", "italic", "underline", "strike"],
+                  [{ list: "ordered" }, { list: "bullet" }],
+                  [{ indent: "-1" }, { indent: "+1" }],
+                  ["blockquote", "code-block"],
+                  ["link"],
+                  ["clean"],
+                ],
+              }}
+              placeholder="Enter BOD member's detailed information, achievements, and specializations..."
+              theme="snow"
+              className="bg-white"
+            />
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Format your content with bold, italic, lists, and links. This will be displayed on the public page.
+          </p>
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            URL Slug
+          </label>
+          <input
+            type="text"
+            name="slug"
+            value={formData.slug}
+            onChange={handleChange}
+            placeholder="e.g., john-doe"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Title
+          </label>
+          <input
+            type="text"
+            name="seo_title"
+            value={formData.seo_title}
+            onChange={handleChange}
+            placeholder="Page title for SEO"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Description
+          </label>
+          <textarea
+            name="seo_description"
+            rows="3"
+            value={formData.seo_description}
+            onChange={handleChange}
+            placeholder="Meta description for search engines"
+            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
+          />
+        </div>
+
+        <div className="col-span-2">
+          <label className="block text-sm font-medium text-gray-700">
+            SEO Keywords
+          </label>
+          <input
+            type="text"
+            name="seo_keywords"
+            value={formData.seo_keywords}
+            onChange={handleChange}
+            placeholder="Comma-separated keywords"
             className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-3"
           />
         </div>
@@ -417,7 +514,6 @@ const TeamMemberForm = ({ member, onSubmit, onCancel, isSaving }) => {
   const [formData, setFormData] = useState({
     name: member?.name || "",
     subtitle: member?.subtitle || "",
-    description: member?.description || "",
     image_file: null,
     existing_image: member?.image_url || "",
   });
@@ -480,24 +576,12 @@ const TeamMemberForm = ({ member, onSubmit, onCancel, isSaving }) => {
         </div>
         <div className="col-span-2">
           <label className="block text-sm font-medium text-gray-700">
-            Subtitle
+            Designation
           </label>
           <input
             type="text"
             name="subtitle"
             value={formData.subtitle}
-            onChange={handleChange}
-            className="mt-1 block w-full border border-gray-300 rounded-md p-3"
-          />
-        </div>
-        <div className="col-span-2">
-          <label className="block text-sm font-medium text-gray-700">
-            Description
-          </label>
-          <textarea
-            name="description"
-            rows="4"
-            value={formData.description}
             onChange={handleChange}
             className="mt-1 block w-full border border-gray-300 rounded-md p-3"
           />
@@ -589,6 +673,11 @@ export default function AdminAbout() {
   const SERVER_BASE_URL = SERVER_ROOT_URL;
 
   const getErrorMessage = (err, defaultMsg) => {
+    // First check if error has a processed message from errorHandler
+    if (err?.message) {
+      return err.message;
+    }
+    // Fallback to response data for direct API errors
     const status = err.response?.status;
     if (status === 400)
       return (
@@ -896,7 +985,7 @@ export default function AdminAbout() {
               Name
             </th>
             <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase hidden sm:table-cell">
-              Subtitle
+              Designation
             </th>
             <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase">
               Actions
@@ -1013,10 +1102,7 @@ export default function AdminAbout() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-16 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
-              </div>
+              <PageLoader message="Syncing records..." />
             ) : (
               <>
                 {activeTab === "bod" && bodMembers.length > 0 && renderBODTable()}

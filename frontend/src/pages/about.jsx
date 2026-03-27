@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   getAllBOD,
   getAllTeamMembers,
@@ -17,10 +17,23 @@ import { MdOutlineCelebration } from "react-icons/md";
 import { GiMusicalNotes } from "react-icons/gi";
 import { Link } from "react-router-dom";
 import logo from "../assets/logo.png";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 const toAnchorSlug = (program) => {
   if (program?.slug) return program.slug;
   return String(program?.title || "program")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+};
+
+const toBODSlug = (bodMember) => {
+  if (bodMember?.slug) return bodMember.slug;
+  return String(bodMember?.name || "member")
     .toLowerCase()
     .trim()
     .replace(/[^a-z0-9\s-]/g, "")
@@ -36,11 +49,45 @@ const About = () => {
   const [teamMembers, setTeamMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [activeTeamMember, setActiveTeamMember] = useState(null);
-  const [selectedProgramIndex, setSelectedProgramIndex] = useState(null);
+  const [teamCarouselIndex, setTeamCarouselIndex] = useState(0);
+  const [cardsPerView, setCardsPerView] = useState(4);
 
   // Use centralized SERVER_ROOT_URL from api.js
   const SERVER_BASE_URL = SERVER_ROOT_URL;
+
+  // Update cardsPerView on window resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 640) {
+        setCardsPerView(1);
+      } else if (window.innerWidth < 1024) {
+        setCardsPerView(2);
+      } else {
+        setCardsPerView(4);
+      }
+    };
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Carousel handlers
+  const handleTeamNext = () => {
+    const maxIndex = Math.max(0, teamMembers.length - cardsPerView);
+    setTeamCarouselIndex((prev) => (prev >= maxIndex ? 0 : prev + 1));
+  };
+
+  const handleTeamPrev = () => {
+    const maxIndex = Math.max(0, teamMembers.length - cardsPerView);
+    setTeamCarouselIndex((prev) => (prev === 0 ? maxIndex : prev - 1));
+  };
+
+  const visibleTeamMembers = teamMembers.slice(
+    teamCarouselIndex,
+    teamCarouselIndex + cardsPerView,
+  );
+  const totalPages = Math.ceil(teamMembers.length / cardsPerView);
 
   // Fetch Data from Backend
   useEffect(() => {
@@ -62,25 +109,10 @@ const About = () => {
 
         // Sort programs by date descending
         const sortedPrograms = programsData.sort(
-          (a, b) => new Date(b.program_date) - new Date(a.program_date)
+          (a, b) => new Date(b.program_date) - new Date(a.program_date),
         );
         setPrograms(sortedPrograms);
         setTeamMembers(teamData);
-
-        if (teamData.length > 0) {
-          setActiveTeamMember(teamData[0].id);
-        }
-
-        const hash = window.location.hash.replace(/^#/, "");
-        if (hash) {
-          const matchIndex = sortedPrograms.findIndex(
-            (program) => toAnchorSlug(program) === hash
-          );
-          if (matchIndex >= 0) {
-            setSelectedProgramIndex(matchIndex);
-            document.body.style.overflow = "hidden";
-          }
-        }
       } catch (err) {
         console.error("Error fetching About Us data:", err);
         setError("Failed to load cultural data. Please try again later.");
@@ -92,97 +124,21 @@ const About = () => {
     fetchData();
   }, []);
 
-  // Modal Logic
-  const openModal = (index) => {
-    const selected = programs[index];
-    const slug = toAnchorSlug(selected);
-    if (slug) {
-      window.history.replaceState(null, "", `/about#${slug}`);
-    }
-    setSelectedProgramIndex(index);
-    document.body.style.overflow = "hidden";
-  };
-
-  const closeModal = useCallback(() => {
-    setSelectedProgramIndex(null);
-    document.body.style.overflow = "unset";
-  }, []);
-
-  const handleNextModalProgram = (e) => {
-    e.stopPropagation();
-    setSelectedProgramIndex((prev) => {
-      const nextIndex = prev === programs.length - 1 ? 0 : prev + 1;
-      const slug = toAnchorSlug(programs[nextIndex]);
-      if (slug) {
-        window.history.replaceState(null, "", `/about#${slug}`);
-      }
-      return nextIndex;
-    });
-  };
-
-  const handlePrevModalProgram = (e) => {
-    e.stopPropagation();
-    setSelectedProgramIndex((prev) => {
-      const nextIndex = prev === 0 ? programs.length - 1 : prev - 1;
-      const slug = toAnchorSlug(programs[nextIndex]);
-      if (slug) {
-        window.history.replaceState(null, "", `/about#${slug}`);
-      }
-      return nextIndex;
-    });
-  };
-
-  // Keyboard Navigation
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (selectedProgramIndex === null) return;
-      if (e.key === "Escape") closeModal();
-      if (e.key === "ArrowRight") handleNextModalProgram(e);
-      if (e.key === "ArrowLeft") handlePrevModalProgram(e);
-    };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedProgramIndex, closeModal]);
-
-  const handleMemberClick = (memberId) => {
-    setActiveTeamMember(activeTeamMember === memberId ? null : memberId);
-  };
-
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-          <p className="text-xl text-[#191938] font-['Inter']">
-            Loading About Us content...
-          </p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Loading About Us content..." />;
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-red-50">
-        <div className="text-center p-8">
-          <p className="text-xl font-['Inter'] text-red-700 mb-4">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="px-6 py-2 bg-[#cf0408] text-white rounded-lg hover:bg-[#a00306] transition font-['Inter']"
-          >
-            Retry
-          </button>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <EmptyState
+          title="No About Content Found"
+          description={error}
+          className="max-w-2xl"
+        />
       </div>
     );
   }
-
-  const activeMemberData = teamMembers.find(
-    (member) => member.id === activeTeamMember
-  );
-
-  const modalProgram =
-    selectedProgramIndex !== null ? programs[selectedProgramIndex] : null;
 
   const programStructuredData = {
     "@context": "https://schema.org",
@@ -196,8 +152,8 @@ const About = () => {
       },
       url:
         typeof window !== "undefined"
-          ? `${window.location.origin}/about#${toAnchorSlug(program)}`
-          : `/about#${toAnchorSlug(program)}`,
+          ? `${window.location.origin}/about/${toAnchorSlug(program)}`
+          : `/about/${toAnchorSlug(program)}`,
     })),
   };
 
@@ -267,77 +223,39 @@ const About = () => {
             </p>
           </div>
 
-          {/* Quote & Statistics Section */}
-          <div className="grid lg:grid-cols-2 gap-6 md:gap-8">
-            {/* Left: Quote */}
-            <div className="bg-gradient-to-br from-red-50 to-gray-50 rounded-2xl p-6 sm:p-8 md:p-10 shadow-lg flex items-center justify-center border-l-4 border-[#cf0408]">
-              <h2 className="text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-center leading-relaxed text-[#cf0408] font-['Playfair_Display']">
-                "Where tradition meets creativity,
-                <br className="hidden sm:block" />
-                and passion becomes performance."
-              </h2>
+          {/* Statistics Section */}
+          <div className="grid grid-cols-2 gap-3 sm:gap-4">
+            {/* Stat 1 */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#200470] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-center mb-2 md:mb-3">
+                <FaCalendarAlt className="text-xl sm:text-2xl md:text-3xl text-[#200470]" />
+              </div>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
+                35+
+              </h3>
+              <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
+                Years of Excellence
+              </p>
             </div>
 
-            {/* Right: Statistics Grid */}
-            <div className="grid grid-cols-2 gap-3 sm:gap-4">
-              {/* Stat 1 */}
-              <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#cf0408] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="flex items-center justify-center mb-2 md:mb-3">
-                  <FaCalendarAlt className="text-xl sm:text-2xl md:text-3xl text-[#cf0408]" />
-                </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
-                  35+
-                </h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
-                  Years of Excellence
-                </p>
+            {/* Stat 2 */}
+            <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#200470] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center justify-center mb-2 md:mb-3">
+                <FaUsers className="text-xl sm:text-2xl md:text-3xl text-[#200470]" />
               </div>
-
-              {/* Stat 2 */}
-              <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#cf0408] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="flex items-center justify-center mb-2 md:mb-3">
-                  <FaUsers className="text-xl sm:text-2xl md:text-3xl text-[#cf0408]" />
-                </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
-                  10000+
-                </h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
-                  Students Trained
-                </p>
-              </div>
-
-              {/* Stat 3 */}
-              <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#cf0408] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="flex items-center justify-center mb-2 md:mb-3">
-                  <FaTrophy className="text-xl sm:text-2xl md:text-3xl text-[#cf0408]" />
-                </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
-                  10+
-                </h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
-                  National Competitions
-                </p>
-              </div>
-
-              {/* Stat 4 */}
-              <div className="bg-white rounded-xl p-4 sm:p-5 md:p-6 shadow-md border-l-4 border-[#cf0408] hover:shadow-lg hover:-translate-y-1 transition-all duration-300">
-                <div className="flex items-center justify-center mb-2 md:mb-3">
-                  <FaAward className="text-xl sm:text-2xl md:text-3xl text-[#cf0408]" />
-                </div>
-                <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
-                  100+
-                </h3>
-                <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
-                  Sadhana Samman Awards
-                </p>
-              </div>
+              <h3 className="text-xl sm:text-2xl md:text-3xl font-extrabold text-[#191938] font-['Inter'] mb-1 text-center">
+                10000+
+              </h3>
+              <p className="text-gray-600 text-xs sm:text-sm font-['Roboto'] text-center">
+                Students Trained
+              </p>
             </div>
           </div>
 
           {/* Additional Achievements Section */}
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 pt-6 md:pt-8">
-            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#cf0408] hover:shadow-lg transition duration-300">
-              <GiMusicalNotes className="text-3xl sm:text-4xl md:text-5xl text-[#cf0408] mx-auto mb-3 md:mb-4" />
+            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#200470] hover:shadow-lg transition duration-300">
+              <GiMusicalNotes className="text-3xl sm:text-4xl md:text-5xl text-[#200470] mx-auto mb-3 md:mb-4" />
               <h3 className="text-base sm:text-lg md:text-xl font-bold font-['Playfair_Display'] text-[#191938] mb-2">
                 Folk Culture Revival
               </h3>
@@ -347,8 +265,8 @@ const About = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#cf0408] hover:shadow-lg transition duration-300">
-              <MdOutlineCelebration className="text-3xl sm:text-4xl md:text-5xl text-[#cf0408] mx-auto mb-3 md:mb-4" />
+            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#200470] hover:shadow-lg transition duration-300">
+              <MdOutlineCelebration className="text-3xl sm:text-4xl md:text-5xl text-[#200470] mx-auto mb-3 md:mb-4" />
               <h3 className="text-base sm:text-lg md:text-xl font-bold font-['Playfair_Display'] text-[#191938] mb-2">
                 Nationwide Programs
               </h3>
@@ -358,8 +276,8 @@ const About = () => {
               </p>
             </div>
 
-            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#cf0408] hover:shadow-lg transition duration-300 sm:col-span-2 lg:col-span-1">
-              <FaTheaterMasks className="text-3xl sm:text-4xl md:text-5xl text-[#cf0408] mx-auto mb-3 md:mb-4" />
+            <div className="bg-gradient-to-br from-red-50 to-white p-5 sm:p-6 md:p-8 rounded-2xl shadow-md text-center border-t-4 border-[#200470] hover:shadow-lg transition duration-300 sm:col-span-2 lg:col-span-1">
+              <FaTheaterMasks className="text-3xl sm:text-4xl md:text-5xl text-[#200470] mx-auto mb-3 md:mb-4" />
               <h3 className="text-base sm:text-lg md:text-xl font-bold font-['Playfair_Display'] text-[#191938] mb-2">
                 Generational Bridge
               </h3>
@@ -394,24 +312,24 @@ const About = () => {
             Core Objectives
           </h2>
           <ul className="grid md:grid-cols-2 gap-6 text-gray-700 font-['Roboto'] max-w-5xl mx-auto text-left">
-            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#cf0408]">
-              <FaMusic className="text-xl text-[#cf0408] flex-shrink-0 mt-1" />
+            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#200470]">
+              <FaMusic className="text-xl text-[#200470] flex-shrink-0 mt-1" />
               <span>
                 Promote Nepalese music, dance, and traditional art forms.
               </span>
             </li>
-            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#cf0408]">
-              <FaAward className="text-xl text-[#cf0408] flex-shrink-0 mt-1" />
+            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#200470]">
+              <FaAward className="text-xl text-[#200470] flex-shrink-0 mt-1" />
               <span>
                 Provide structured and professional training for all age groups.
               </span>
             </li>
-            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#cf0408]">
-              <FaTheaterMasks className="text-xl text-[#cf0408] flex-shrink-0 mt-1" />
+            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#200470]">
+              <FaTheaterMasks className="text-xl text-[#200470] flex-shrink-0 mt-1" />
               <span>Foster creativity and encourage artistic freedom.</span>
             </li>
-            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#cf0408]">
-              <MdOutlineCelebration className="text-xl text-[#cf0408] flex-shrink-0 mt-1" />
+            <li className="flex items-start gap-3 text-lg p-3 bg-white rounded-lg shadow-sm border-l-4 border-[#200470]">
+              <MdOutlineCelebration className="text-xl text-[#200470] flex-shrink-0 mt-1" />
               <span>
                 Organize national and international cultural programs.
               </span>
@@ -419,7 +337,7 @@ const About = () => {
           </ul>
         </div>
 
-         {/* ======= BOARD OF DIRECTORS ======= */}
+        {/* ======= BOARD OF DIRECTORS ======= */}
         <div className="text-center pt-10 border-t border-gray-200">
           <header className="mb-10 md:mb-14">
             <p className="text-[#cf0408] text-xs sm:text-sm font-bold uppercase tracking-widest mb-2 font-['Inter']">
@@ -435,51 +353,64 @@ const About = () => {
               Board of Directors information is currently being updated.
             </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 md:gap-8">
-              {bodMembers.map((member) => (
-                <div
-                  key={member.bod_id}
-                  className="bg-white p-0 rounded-lg shadow-md border-b-4 border-[#cf0408] transition duration-300 hover:shadow-xl transform group overflow-hidden"
-                >
-                  {/* Image Block */}
-                  <div className="aspect-[3/4] w-full min-h-[160px] max-h-[320px] bg-gray-100 overflow-hidden flex items-center justify-center">
-                    <img
-                      src={
-                        member.profile_image
-                          ? `${SERVER_BASE_URL}${member.profile_image}`
-                          : logo
-                      }
-                      alt={member.name}
-                      className="w-full h-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                      style={{ maxHeight: '320px', minHeight: '160px' }}
-                    />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+              {bodMembers.map((member) => {
+                const bodSlug = toBODSlug(member);
+                const cardContent = (
+                  <>
+                    {/* Image Block */}
+                    <div className="h-64 overflow-hidden">
+                      <img
+                        src={
+                          member.profile_image
+                            ? `${SERVER_BASE_URL}${member.profile_image}`
+                            : logo
+                        }
+                        alt={member.name}
+                        className="w-full aspect-4/3 object-cover object-top transition-transform duration-500 hover:scale-105"
+                      />
+                    </div>
+                    {/* Text Content */}
+                    <div className="p-6 text-center">
+                      <h3 className="text-xl font-bold font-['Inter'] text-[#0f0f50] mb-1">
+                        {member.name}
+                      </h3>
+                      <p className="text-red-600 text-sm font-bold font-['Roboto'] mb-4">
+                        {member.designation}
+                      </p>
+                      {bodSlug ? (
+                        <div className="text-center text-indigo-700 font-bold">
+                          View Details
+                        </div>
+                      ) : null}
+                    </div>
+                  </>
+                );
+
+                return bodSlug ? (
+                  <Link
+                    key={member.bod_id}
+                    to={`/about/bod/${bodSlug}`}
+                    className="block bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden"
+                  >
+                    {cardContent}
+                  </Link>
+                ) : (
+                  <div
+                    key={member.bod_id}
+                    className="bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden"
+                  >
+                    {cardContent}
                   </div>
-                  {/* Text Content */}
-                  <div className="p-4 sm:p-5 text-center">
-                    <h3 className="text-lg sm:text-xl font-bold font-['Playfair_Display'] text-[#191938] mb-1">
-                      {member.name}
-                    </h3>
-                    <p className="text-[#cf0408] text-xs sm:text-sm font-bold tracking-widest uppercase mb-2 sm:mb-3 font-['Inter']">
-                      {member.designation}
-                    </p>
-                    <p className="text-gray-600 text-xs sm:text-sm leading-snug line-clamp-3 font-['Roboto']">
-                      {member.bio}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
 
-
-
         {/* ======= TEAM MEMBERS ======= */}
         <div className="pt-8 md:pt-12">
           <div className="text-center mb-10 md:mb-14">
-            <p className="text-[#cf0408] text-xs sm:text-sm font-bold uppercase tracking-widest mb-2 font-['Inter']">
-              Expert Mentors
-            </p>
             <h2 className="text-3xl sm:text-4xl font-bold font-['Playfair_Display'] text-[#191938]">
               Our Faculty Team
             </h2>
@@ -490,83 +421,99 @@ const About = () => {
               Team member information is currently being updated.
             </p>
           ) : (
-            <div className="max-w-6xl mx-auto bg-white border-2 border-gray-100 shadow-xl overflow-hidden flex flex-col md:grid md:grid-cols-4">
-              {/* Left Column: Roster List */}
-              <div className="md:col-span-1 border-r-0 md:border-r-2 border-b-2 md:border-b-0 border-gray-100 bg-gray-50 py-4 md:py-6">
-                <p className="px-4 md:px-6 text-xs font-bold uppercase tracking-[0.2em] text-[#191938] mb-3 md:mb-4 border-b pb-2 border-gray-200 font-['Roboto']">
-                  Select Mentor
-                </p>
-
-                <div className="flex md:flex-col overflow-x-auto md:overflow-x-visible">
-                  {teamMembers.map((member) => {
-                    const isActive = member.id === activeTeamMember;
-                    return (
-                      <button
-                        key={member.id}
-                        onClick={() => handleMemberClick(member.id)}
-                        className={`block w-full text-left px-4 md:px-6 py-3 text-sm md:text-base font-semibold transition-all duration-200 ease-in-out focus:outline-none font-['Inter'] whitespace-nowrap md:whitespace-normal
-                          ${
-                            isActive
-                              ? "bg-white text-[#cf0408] border-l-0 md:border-l-0 border-b-4 md:border-b-0 md:border-r-4 border-[#cf0408] font-bold shadow-md"
-                              : "text-gray-700 border-l-0 md:border-l-0 border-b-4 md:border-b-0 md:border-r-4 border-transparent hover:bg-white hover:text-[#191938]"
-                          }
-                        `}
-                      >
-                        {member.name}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* Right Column: Details Pane */}
-              <div className="md:col-span-3 p-6 sm:p-8 md:p-12 bg-white">
-                {activeMemberData ? (
-                  <div className="flex flex-col gap-6 md:gap-8 animate-in fade-in-0 duration-500">
-                    {/* Image and Title Block */}
-                    <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-6 border-b-2 border-gray-100 pb-4 md:pb-6">
+            <div className="flex flex-col gap-6">
+              {/* Carousel Container */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                {visibleTeamMembers.map((member) => (
+                  <div
+                    key={member.id}
+                    className="bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden"
+                  >
+                    {/* Image Block */}
+                    <div className="h-64 overflow-hidden">
                       <img
                         src={
-                          activeMemberData.image_url
-                            ? `${SERVER_BASE_URL}${activeMemberData.image_url}`
+                          member.image_url
+                            ? `${SERVER_BASE_URL}${member.image_url}`
                             : logo
                         }
-                        alt={activeMemberData.name}
-                        className="w-20 h-20 sm:w-24 sm:h-24 md:w-28 md:h-28 object-cover object-top rounded-full shadow-lg border-4 border-white flex-shrink-0 mx-auto sm:mx-0"
+                        alt={member.name}
+                        className="w-full aspect-4/3 object-cover object-top transition-transform duration-500 hover:scale-105"
                       />
-                      <div className="text-center sm:text-left">
-                        <p className="text-[#cf0408] font-bold text-xs sm:text-sm tracking-widest uppercase mb-1 font-['Inter']">
-                          {activeMemberData.subtitle}
-                        </p>
-                        <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold font-['Playfair_Display'] text-[#191938] leading-tight">
-                          {activeMemberData.name}
-                        </h3>
-                      </div>
                     </div>
-
-                    {/* Details */}
-                    <div>
-                      {activeMemberData.description ? (
-                        <p className="text-gray-700 text-sm sm:text-base md:text-lg leading-relaxed whitespace-pre-line font-['Roboto'] border-l-4 border-[#191938] pl-3 md:pl-4 pt-2">
-                          {activeMemberData.description}
-                        </p>
-                      ) : (
-                        <p className="text-gray-500 italic text-base md:text-lg font-['Roboto']">
-                          A detailed bio for {activeMemberData.name} will be
-                          uploaded soon.
-                        </p>
-                      )}
+                    {/* Text Content */}
+                    <div className="p-6 text-center">
+                      <h3 className="text-xl font-bold font-['Inter'] text-[#0f0f50] mb-1">
+                        {member.name}
+                      </h3>
+                      <p className="text-red-600 text-sm font-semibold font-['Roboto']">
+                        {member.subtitle}
+                      </p>
                     </div>
                   </div>
-                ) : (
-                  <div className="flex items-center justify-center w-full min-h-[200px] md:min-h-[300px] text-center text-gray-500 italic font-['Roboto']">
-                    <p className="text-base md:text-xl px-4">
-                      Select a faculty member from the list to view their
-                      profile.
-                    </p>
-                  </div>
-                )}
+                ))}
               </div>
+
+              {/* Navigation Controls */}
+              {teamMembers.length > cardsPerView && (
+                <div className="flex items-center justify-center gap-6 mt-8">
+                  <button
+                    onClick={handleTeamPrev}
+                    className="p-3 rounded-full border-2 border-red-600 text-red-600 hover:bg-red-50 transition duration-300 transform hover:scale-110"
+                    aria-label="Previous members"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M15 19l-7-7 7-7"
+                      />
+                    </svg>
+                  </button>
+
+                  {/* Page Indicators */}
+                  <div className="flex gap-2">
+                    {Array.from({ length: totalPages }).map((_, idx) => (
+                      <button
+                        key={idx}
+                        onClick={() => setTeamCarouselIndex(idx * cardsPerView)}
+                        className={`w-3 h-3 rounded-full transition duration-300 ${
+                          Math.floor(teamCarouselIndex / cardsPerView) === idx
+                            ? "bg-red-600 w-8"
+                            : "bg-gray-300 hover:bg-gray-400"
+                        }`}
+                        aria-label={`Go to page ${idx + 1}`}
+                      />
+                    ))}
+                  </div>
+
+                  <button
+                    onClick={handleTeamNext}
+                    className="p-3 rounded-full border-2 border-red-600 text-red-600 hover:bg-red-50 transition duration-300 transform hover:scale-110"
+                    aria-label="Next members"
+                  >
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 5l7 7-7 7"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -574,9 +521,6 @@ const About = () => {
         {/* ======= PAST PROGRAMS ======= */}
         <div className="bg-white pt-12 md:pt-16 rounded-xl shadow-lg border border-gray-100">
           <header className="max-w-7xl w-full pt-6 md:pt-10 pb-8 md:pb-12 flex flex-col items-center gap-3 md:gap-4 text-center px-4">
-            <p className="text-[#cf0408] text-xs sm:text-sm font-bold uppercase tracking-widest font-['Inter']">
-              Our Legacy
-            </p>
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold font-['Playfair_Display'] text-[#191938] leading-tight">
               Historic <span className="text-[#cf0408]">Showcases</span>
             </h2>
@@ -593,12 +537,11 @@ const About = () => {
           ) : (
             <>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 md:gap-8 p-4 sm:p-6 md:p-8 pt-4 md:pt-6">
-                {programs.map((program, index) => (
-                  <section
+                {programs.map((program) => (
+                  <Link
                     key={program.program_id}
-                    id={toAnchorSlug(program)}
+                    to={`/about/${toAnchorSlug(program)}`}
                     className="bg-gray-50 rounded-xl shadow-md overflow-hidden border border-gray-200 cursor-pointer transition duration-300 hover:shadow-xl group"
-                    onClick={() => openModal(index)}
                   >
                     <div className="h-40 sm:h-48 overflow-hidden relative">
                       {program.image_url ? (
@@ -639,7 +582,7 @@ const About = () => {
                         </svg>
                       </div>
                     </div>
-                  </section>
+                  </Link>
                 ))}
               </div>
               <div className="text-center pt-6 md:pt-8 pb-8 md:pb-12">
@@ -658,171 +601,21 @@ const About = () => {
         </div>
 
         {/* ======= CTA SECTION ======= */}
-        <div className="text-center pt-12 md:pt-16 px-4">
+        <div className="text-center pt-12 md:pt-16 px-4 pb-8 md:pb-12">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-['Playfair_Display'] text-[#0f0f50] mb-3 md:mb-4">
             Join Our Artistic Journey
           </h2>
-          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto mb-6 md:mb-8 font-['Roboto']">
+          <p className="text-gray-600 text-sm sm:text-base max-w-2xl mx-auto mb-8 md:mb-10 font-['Roboto']">
             Be a part of Sadhana Kala Kendra and let your creativity find its
             true expression through music and art.
           </p>
+          <Link to="/register">
+            <button className="px-8 sm:px-10 py-3 sm:py-4 bg-gradient-to-r from-red-600 to-red-700 hover:from-red-700 hover:to-red-800 text-white font-bold text-base sm:text-lg rounded-full shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:scale-105 border-2 border-red-600 font-['Roboto']">
+              Join Now
+            </button>
+          </Link>
         </div>
       </div>
-
-      {/* ======= PROGRAM MODAL ======= */}
-      {selectedProgramIndex !== null && modalProgram && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 md:p-8"
-          onClick={closeModal}
-        >
-          {/* Overlay */}
-          <div className="absolute inset-0 bg-[#191938]/30 backdrop-blur-sm transition-opacity duration-300"></div>
-
-          {/* Modal Content Container */}
-          <div
-            className="relative w-full max-w-6xl bg-white rounded-xl md:rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col md:flex-row max-h-[90vh] h-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* Close Button */}
-            <button
-              onClick={closeModal}
-              className="absolute top-3 right-3 md:top-4 md:right-4 z-50 p-2 bg-white/80 hover:bg-[#cf0408] hover:text-white rounded-full transition-colors backdrop-blur-md shadow-lg border border-gray-100"
-              aria-label="Close Modal"
-            >
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-              >
-                <line x1="18" y1="6" x2="6" y2="18" />
-                <line x1="6" y1="6" x2="18" y2="18" />
-              </svg>
-            </button>
-
-            {/* Left Side: Image */}
-            <div className="w-full md:w-3/5 bg-black flex items-center justify-center relative min-h-[250px] sm:min-h-[300px] md:min-h-full">
-              {modalProgram.image_url ? (
-                <img
-                  src={`${SERVER_BASE_URL}${modalProgram.image_url}`}
-                  alt={modalProgram.title}
-                  className="w-full h-full max-h-[40vh] md:max-h-full object-contain"
-                />
-              ) : (
-                <div className="text-white/10 font-['Playfair_Display'] text-2xl md:text-3xl text-center px-4">
-                  Sadhana Kala Kendra
-                </div>
-              )}
-
-              {/* Mobile Nav Overlay */}
-              <div className="absolute inset-x-0 bottom-4 flex justify-between px-4 md:hidden pointer-events-none">
-                <button
-                  onClick={handlePrevModalProgram}
-                  className="pointer-events-auto p-2 bg-white/80 rounded-full shadow-lg text-[#191938]"
-                  aria-label="Previous Program"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="15 18 9 12 15 6" />
-                  </svg>
-                </button>
-                <button
-                  onClick={handleNextModalProgram}
-                  className="pointer-events-auto p-2 bg-white/80 rounded-full shadow-lg text-[#191938]"
-                  aria-label="Next Program"
-                >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                  >
-                    <polyline points="9 18 15 12 9 6" />
-                  </svg>
-                </button>
-              </div>
-            </div>
-
-            {/* Right Side: Content */}
-            <div className="w-full md:w-2/5 p-6 sm:p-8 md:p-12 flex flex-col bg-white overflow-y-auto">
-              <div className="mb-auto">
-                {/* Date Badge */}
-                <span className="inline-block py-1 px-3 rounded-full bg-gray-100 text-[#cf0408] text-xs sm:text-sm font-bold uppercase tracking-wider mb-4 md:mb-6 font-['Inter']">
-                  {new Date(modalProgram.program_date).toLocaleDateString(
-                    "en-US",
-                    { day: "numeric", month: "long", year: "numeric" }
-                  )}
-                </span>
-
-                <h3 className="text-2xl sm:text-3xl md:text-4xl font-bold font-['Playfair_Display'] text-[#191938] mb-4 md:mb-6 leading-tight">
-                  {modalProgram.title}
-                </h3>
-
-                <div className="w-12 md:w-16 h-1 bg-[#cf0408] mb-6 md:mb-8"></div>
-
-                <p className="text-gray-700 leading-relaxed text-sm sm:text-base md:text-lg whitespace-pre-line font-['Roboto']">
-                  {modalProgram.description}
-                </p>
-              </div>
-
-              {/* Desktop Navigation Buttons */}
-              <div className="hidden md:flex items-center justify-between pt-8 mt-8 border-t border-gray-200">
-                <button
-                  onClick={handlePrevModalProgram}
-                  className="flex items-center gap-3 text-gray-500 hover:text-[#cf0408] transition-colors group font-['Inter']"
-                >
-                  <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center group-hover:border-[#cf0408] transition-colors bg-white shadow-sm">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="15 18 9 12 15 6" />
-                    </svg>
-                  </div>
-                  <span className="text-sm font-bold uppercase tracking-wider">
-                    Previous
-                  </span>
-                </button>
-
-                <button
-                  onClick={handleNextModalProgram}
-                  className="flex items-center gap-3 text-gray-500 hover:text-[#cf0408] transition-colors group font-['Inter']"
-                >
-                  <span className="text-sm font-bold uppercase tracking-wider">
-                    Next
-                  </span>
-                  <div className="w-10 h-10 rounded-full border border-gray-300 flex items-center justify-center group-hover:border-[#cf0408] transition-colors bg-white shadow-sm">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                    >
-                      <polyline points="9 18 15 12 9 6" />
-                    </svg>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
     </section>
   );
 };

@@ -3,6 +3,8 @@ import { Link } from "react-router-dom";
 import { getAllCourses } from "../admin/services/coursesService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 const Courses = () => {
   const [coursesList, setCoursesList] = useState([]);
@@ -39,12 +41,7 @@ const Courses = () => {
     return (
       <>
         <Seo {...seoProps} />
-        <div className="min-h-screen flex items-center justify-center bg-white">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-            <p className="text-xl text-[#191938] font-['Inter']">Loading Courses...</p>
-          </div>
-        </div>
+        <PageLoader message="Loading courses content..." />
       </>
     );
   }
@@ -106,10 +103,10 @@ const Courses = () => {
         </div>
       ) : (
         <div className="max-w-7xl mx-auto px-4">
-          <p className="col-span-full text-center text-gray-700 text-lg p-10 bg-yellow-50 rounded-lg font-['Roboto'] shadow-inner">
-            <span className="text-xl font-bold block mb-2">No courses are currently listed!</span>
-            Please check back soon for our latest class offerings.
-          </p>
+          <EmptyState
+            title="No Courses Found"
+            description="Please check back soon for our latest class offerings."
+          />
         </div>
       )}
     </section>

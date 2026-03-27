@@ -16,20 +16,20 @@ class RegisterModel {
         return rows[0];
     }
 
-    static async createStudent({ full_name, email, phone, address, age, occupation, photo }, connection = db) {
+    static async createStudent({ full_name, email, phone, address, age, occupation }, connection = db) {
         const [result] = await connection.query(`
-            INSERT INTO Students (full_name, email, phone, address, age, occupation, photo)
-            VALUES (?, ?, ?, ?, ?, ?, ?)
-        `, [full_name, email, phone, address, age, occupation, photo]);
+            INSERT INTO Students (full_name, email, phone, address, age, occupation)
+            VALUES (?, ?, ?, ?, ?, ?)
+        `, [full_name, email, phone, address, age, occupation]);
         return result.insertId;
     }
 
-    static async updateStudent(student_id, { full_name, email, phone, address, age, occupation, photo }) {
+    static async updateStudent(student_id, { full_name, email, phone, address, age, occupation }) {
         await db.query(`
             UPDATE Students
-            SET full_name = ?, email = ?, phone = ?, address = ?, age = ?, occupation = ?, photo = ?
+            SET full_name = ?, email = ?, phone = ?, address = ?, age = ?, occupation = ?
             WHERE student_id = ?
-        `, [full_name, email, phone, address, age, occupation, photo, student_id]);
+        `, [full_name, email, phone, address, age, occupation, student_id]);
     }
 
     static async deleteStudent(student_id) {
@@ -75,7 +75,6 @@ class RegisterModel {
                 s.address,
                 s.age,
                 s.occupation,
-                s.photo,
                 r.student_id,
                 c.course_name,
                 c.duration,

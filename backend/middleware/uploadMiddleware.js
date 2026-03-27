@@ -24,27 +24,29 @@ const storage = multer.diskStorage({
 const fileFilter = (req, file, cb) => {
     const ext = path.extname(file.originalname).toLowerCase();
     const allowedExtensions = [".png", ".jpg", ".jpeg", ".webp", ".mp4"];
+    const allowedMimes = ["image/png", "image/jpeg", "image/webp", "video/mp4"];
     
-    if (!file.mimetype.startsWith("image/") && file.mimetype !== "video/mp4") {
-        return cb(new Error("Invalid MIME type"), false);
+    // Check MIME type
+    if (!allowedMimes.includes(file.mimetype)) {
+        return cb(new Error(`Invalid file type. Allowed types: ${allowedExtensions.join(', ')}`), false);
     }
-    if (allowedExtensions.includes(ext)) {
-        cb(null, true); 
-    } else {
-        // Reject file with a specific error message
-        cb(new Error(`Invalid file type. Only ${allowedExtensions.join(', ')} are allowed.`), false);
+    
+    // Check file extension
+    if (!allowedExtensions.includes(ext)) {
+        return cb(new Error(`Invalid file extension. Allowed types: ${allowedExtensions.join(', ')}`), false);
     }
+    
+    cb(null, true);
 };
 
 /**
  * Middleware export configured for general media uploads (single file).
- * It enforces storage and file type filtering. Size limits are removed.
+ * It enforces storage and file type filtering. Size limits are increased to allow larger files.
  */
 export const uploadMedia = multer({ 
     storage: storage, 
     fileFilter: fileFilter,
     limits: {
-        fileSize: 10 * 1024 * 1024 // 10MB
+        fileSize: 50 * 1024 * 1024 // 50MB
     }
-    // The 'limits' configuration, including 'fileSize', has been removed to allow any size.
 });

@@ -13,17 +13,22 @@ const AboutModel = {
     return rows[0];
   },
 
+  getBODBySlug: async (slug) => {
+    const [rows] = await db.query("SELECT * FROM BOD WHERE slug = ?", [slug]);
+    return rows[0];
+  },
+
   createBOD: async (data) => {
-    const { name, designation, bio, profile_image } = data;
+    const { name, designation, bio, details_content, profile_image, slug, seo_title, seo_description, seo_keywords } = data;
     const [result] = await db.query(
-      "INSERT INTO BOD (name, designation, bio, profile_image) VALUES (?, ?, ?, ?)",
-      [name, designation, bio, profile_image || null]
+      "INSERT INTO BOD (name, designation, bio, details_content, profile_image, slug, seo_title, seo_description, seo_keywords) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [name, designation, bio || null, details_content || null, profile_image || null, slug || null, seo_title || null, seo_description || null, seo_keywords || null]
     );
     return result.insertId;
   },
 
   updateBOD: async (id, data) => {
-    const { name, designation, bio, profile_image } = data;
+    const { name, designation, bio, details_content, profile_image, slug, seo_title, seo_description, seo_keywords } = data;
     
     // Build update query dynamically to only update fields that are provided
     const updates = [];
@@ -34,7 +39,32 @@ const AboutModel = {
     updates.push('designation = ?');
     values.push(designation);
     updates.push('bio = ?');
-    values.push(bio);
+    values.push(bio || null);
+    
+    if (details_content !== undefined) {
+      updates.push('details_content = ?');
+      values.push(details_content || null);
+    }
+    
+    if (slug !== undefined) {
+      updates.push('slug = ?');
+      values.push(slug || null);
+    }
+    
+    if (seo_title !== undefined) {
+      updates.push('seo_title = ?');
+      values.push(seo_title || null);
+    }
+    
+    if (seo_description !== undefined) {
+      updates.push('seo_description = ?');
+      values.push(seo_description || null);
+    }
+    
+    if (seo_keywords !== undefined) {
+      updates.push('seo_keywords = ?');
+      values.push(seo_keywords || null);
+    }
     
     // Only update profile_image if a new one is provided
     if (profile_image !== undefined) {
@@ -57,9 +87,7 @@ const AboutModel = {
     if (result.affectedRows === 0) throw new Error("BOD member not found.");
   },
 
-
-  
-  //Team members 
+  // ===== TEAM MEMBERS =====
   getAllTeamMembers: async () => {
     const [rows] = await db.query("SELECT * FROM team_members ORDER BY id ASC");
     return rows;
@@ -73,18 +101,18 @@ const AboutModel = {
   },
 
   createTeamMember: async (data) => {
-    const { name, subtitle, description, image_url } = data;
+    const { name, subtitle, image_url } = data;
 
     const [result] = await db.query(
-      "INSERT INTO team_members (name, subtitle, description, image_url) VALUES (?, ?, ?, ?)",
-      [name, subtitle, description, image_url || null]
+      "INSERT INTO team_members (name, subtitle, image_url) VALUES (?, ?, ?)",
+      [name, subtitle, image_url || null]
     );
 
     return result.insertId;
   },
 
   updateTeamMember: async (id, data) => {
-    const { name, subtitle, description, image_url } = data;
+    const { name, subtitle, image_url } = data;
     
     const updates = [];
     const values = [];
@@ -93,8 +121,6 @@ const AboutModel = {
     values.push(name);
     updates.push('subtitle = ?');
     values.push(subtitle || null);
-    updates.push('description = ?');
-    values.push(description || null);
     
     // Only update image_url if a new one is provided
     if (image_url !== undefined) {

@@ -1,7 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import api from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
+import DetailPageLayout from "../components/DetailPageLayout";
 
 const EventDetail = () => {
   const { slug } = useParams();
@@ -20,14 +23,40 @@ const EventDetail = () => {
     load();
   }, [slug]);
 
-  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
-  if (!eventItem) return <div className="p-10 text-center">Loading...</div>;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <EmptyState
+          title="No Event Found"
+          description={error}
+          className="max-w-2xl"
+        />
+      </div>
+    );
+  }
+  if (!eventItem) return <PageLoader message="Loading event details..." />;
+
+  const formatDateDisplay = (dateString) => {
+    if (!dateString) return "TBD";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
 
   const title = eventItem.seo_title || `${eventItem.event_name} | Sadhana Kala Kendra`;
   const description = eventItem.seo_description || eventItem.description || "Event details";
+  const stats = [
+    { label: "Date", value: formatDateDisplay(eventItem.event_date) },
+    { label: "Time", value: eventItem.event_time || "TBD" },
+    { label: "Venue", value: eventItem.venue || "TBD" },
+  ];
 
   return (
-    <section className="max-w-4xl mx-auto px-4 py-12">
+    <>
       <Seo
         title={title}
         description={description}
@@ -51,12 +80,31 @@ const EventDetail = () => {
           description,
         }}
       />
-      <h1 className="text-3xl font-bold mb-3">{eventItem.event_name}</h1>
-      <p className="text-gray-700 mb-4">{eventItem.description}</p>
-      <p className="text-sm text-gray-500">Date: {eventItem.event_date || "TBD"}</p>
-      <p className="text-sm text-gray-500">Time: {eventItem.event_time || "TBD"}</p>
-      <p className="text-sm text-gray-500">Venue: {eventItem.venue || "TBD"}</p>
-    </section>
+
+      <DetailPageLayout
+        backTo="/events"
+        backLabel="Back to all events"
+        title={eventItem.event_name}
+        description={eventItem.description || "Event details will be updated soon."}
+        stats={stats}
+        sections={(
+          <div className="rounded-xl border border-gray-200 p-5 bg-white mb-8">
+        
+            <p className="text-sm text-gray-700 mb-2">
+              Organized by: <span className="font-bold">{eventItem.organized_by || "Sadhana Kala Kendra"}</span>
+            </p>
+          </div>
+        )}
+        actions={(  
+          <Link
+            to="/events"
+            className="inline-flex items-center justify-center border border-[#191938] text-[#191938] hover:bg-[#191938] hover:text-white font-semibold px-6 py-3 rounded-full transition"
+          >
+            Explore More Events
+          </Link>
+        )}
+      />
+    </>
   );
 };
 

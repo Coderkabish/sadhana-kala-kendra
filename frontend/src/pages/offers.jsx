@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { getPublicOffers } from "../services/offersService";
-import { SERVER_ROOT_URL } from "../admin/services/api";
+import api, { SERVER_ROOT_URL } from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 const buildImageUrl = (path) => {
   if (!path) return "";
@@ -19,8 +21,15 @@ const normalizeCtaUrl = (rawUrl) => {
   return `https://${trimmed}`;
 };
 
+const formatDateOnly = (dateString) => {
+  if (!dateString) return null;
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
+};
+
 const Offers = () => {
   const [offers, setOffers] = useState([]);
+  const [courseMap, setCourseMap] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -29,12 +38,22 @@ const Offers = () => {
   }, []);
 
   useEffect(() => {
-    const fetchOffers = async () => {
+    const fetchData = async () => {
       setLoading(true);
       setError("");
       try {
-        const data = await getPublicOffers();
-        setOffers(Array.isArray(data) ? data : []);
+        // Fetch offers
+        const offersData = await getPublicOffers();
+        setOffers(Array.isArray(offersData) ? offersData : []);
+        
+        // Fetch all courses to build a map for course offer display
+        const coursesResponse = await api.get("/courses");
+        const coursesData = coursesResponse.data || [];
+        const map = {};
+        coursesData.forEach((course) => {
+          map[course.id] = course.title;
+        });
+        setCourseMap(map);
       } catch (err) {
         setError("Failed to load offers.");
       } finally {
@@ -42,7 +61,7 @@ const Offers = () => {
       }
     };
 
-    fetchOffers();
+    fetchData();
   }, []);
 
   return (
@@ -64,19 +83,16 @@ const Offers = () => {
         </div>
 
         {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div key={n} className="h-80 bg-white rounded-2xl shadow-sm animate-pulse" />
-            ))}
-          </div>
+          <PageLoader message="Loading offers content..." />
         ) : error ? (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4 text-center">
             {error}
           </div>
         ) : offers.length === 0 ? (
-          <div className="bg-white rounded-2xl border border-dashed border-gray-300 py-16 text-center">
-            <p className="text-gray-500 text-lg font-['Roboto']">No active offers available right now.</p>
-          </div>
+          <EmptyState
+            title="No Offers Found"
+            description="No active offers are available right now."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7">
             {offers.map((offer) => (
@@ -97,9 +113,21 @@ const Offers = () => {
                   )}
                 </div>
                 <div className="p-6 flex flex-col h-[calc(100%-13rem)]">
+                  {offer.course_id && courseMap[offer.course_id] && (
+                    <div className="mb-2">
+                      <span className="inline-block px-3 py-1 bg-blue-100 text-blue-700 text-xs font-semibold rounded-full">
+                        Course: {courseMap[offer.course_id]}
+                      </span>
+                    </div>
+                  )}
                   <h2 className="text-xl font-bold text-[#191938] mb-1 font-['Inter'] line-clamp-2">{offer.title}</h2>
                   {offer.subtitle && (
                     <p className="text-sm font-semibold text-red-600 mb-3 line-clamp-1">{offer.subtitle}</p>
+                  )}
+                  {(offer.valid_from || offer.valid_to) && (
+                    <p className="text-xs text-gray-500 mb-2 font-['Roboto']">
+                      Valid: {formatDateOnly(offer.valid_from) || "Any"} to {formatDateOnly(offer.valid_to) || "Any"}
+                    </p>
                   )}
                   <p className="text-gray-700 text-sm leading-relaxed line-clamp-4 font-['Roboto'] flex-1">
                     {offer.description || "Offer details will be updated soon."}

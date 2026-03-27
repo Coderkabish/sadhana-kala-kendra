@@ -7,6 +7,7 @@ import {
   deleteCourse,
 } from "../services/coursesService";
 import { getAllTeachers } from "../services/teachersService";
+import PageLoader from "../../components/PageLoader";
 
 const LucideIcon = ({ children }) => (
   <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="shrink-0">{children}</svg>
@@ -628,7 +629,7 @@ export default function AdminCourses() {
       setCourses(courseData);
       setTeachers(teacherData);
     } catch (err) {
-      setError("Failed to fetch data. Please check connection and services.");
+      setError(err?.message || "Failed to fetch data. Please check connection and services.");
       console.error(err);
     } finally {
       setLoading(false);
@@ -656,13 +657,7 @@ export default function AdminCourses() {
       setEditingCourse(null);
       await fetchData();
     } catch (err) {
-      const errorMsg =
-        err.data?.message ||
-        err.data?.error ||
-        err.message ||
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "An unknown error occurred.";
+      const errorMsg = err?.message || "An unknown error occurred.";
       setError(errorMsg);
     } finally {
       setIsSaving(false);
@@ -686,13 +681,7 @@ export default function AdminCourses() {
       setMessage("Course deleted successfully.");
       fetchData();
     } catch (err) {
-      const errorMsg =
-        err.data?.message ||
-        err.data?.error ||
-        err.message ||
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to delete course.";
+      const errorMsg = err?.message || "Failed to delete course.";
       setError(errorMsg);
       setLoading(false);
     }
@@ -757,10 +746,7 @@ export default function AdminCourses() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-16 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
-              </div>
+              <PageLoader message="Syncing records..." />
             ) : courses.length > 0 ? (
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">
                 <table className="w-full text-left border-collapse min-w-[700px]">

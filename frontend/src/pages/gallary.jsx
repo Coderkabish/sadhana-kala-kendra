@@ -2,6 +2,8 @@ import React, { useState, useEffect } from "react";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 import { getAllGalleryItems } from "../admin/services/galleryService";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 // --- Configuration ---
 const FACEBOOK_URL = "https://www.facebook.com/sadhanakalakendranepal";
@@ -82,7 +84,7 @@ const Gallery = () => {
             <div className="max-w-7xl mx-auto mb-16 px-4">
                 
                 {loading ? (
-                    <div className="text-center py-10 text-xl text-gray-500">Loading gallery...</div>
+                    <PageLoader message="Loading gallery content..." />
                 ) : error ? (
                     <div className="text-center py-10 text-xl text-red-600">{error}</div>
                 ) : photos.length > 0 ? (
@@ -106,7 +108,10 @@ const Gallery = () => {
                         ))}
                     </div>
                 ) : (
-                    <div className="text-center py-10 text-xl text-gray-500">No photos available at the moment.</div>
+                    <EmptyState
+                        title="No Gallery Photos Found"
+                        description="Please check back soon for new photo uploads."
+                    />
                 )}
             </div>
 

@@ -60,6 +60,9 @@ export const Footer = () => {
             <li><a href="/about" className={footerLinkClass}>About Us</a></li>
             <li><a href="/courses" className={footerLinkClass}>Our Courses</a></li>
             <li><a href="/activities" className={footerLinkClass}>Activities</a></li>
+            <li><a href="/artists" className={footerLinkClass}>Artists</a></li>
+            <li><a href="/teachers" className={footerLinkClass}>Teachers</a></li>
+            <li><a href="/offers" className={footerLinkClass}>Offers</a></li>
             <li><a href="/gallery" className={footerLinkClass}>Gallery</a></li>
             <li><a href="/events" className={footerLinkClass}>News & Events</a></li>
           </ul>

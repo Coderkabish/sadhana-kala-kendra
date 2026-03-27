@@ -1,13 +1,24 @@
 import React, { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { getOfferById } from "../services/offersService";
 import { SERVER_ROOT_URL } from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
+import DetailPageLayout from "../components/DetailPageLayout";
 
 const asImage = (path) => {
   if (!path) return "";
   if (path.startsWith("http")) return path;
   return `${SERVER_ROOT_URL}${path.startsWith("/") ? path : `/${path}`}`;
+};
+
+const normalizeCtaUrl = (rawUrl) => {
+  if (!rawUrl) return "";
+  const trimmed = rawUrl.trim();
+  if (!trimmed) return "";
+  if (/^https?:\/\//i.test(trimmed)) return trimmed;
+  return `https://${trimmed}`;
 };
 
 const OfferDetail = () => {
@@ -27,14 +38,27 @@ const OfferDetail = () => {
     load();
   }, [slug]);
 
-  if (error) return <div className="p-10 text-center text-red-600">{error}</div>;
-  if (!offer) return <div className="p-10 text-center">Loading...</div>;
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <EmptyState
+          title="No Offer Found"
+          description={error}
+          className="max-w-2xl"
+        />
+      </div>
+    );
+  }
+  if (!offer) return <PageLoader message="Loading offer details..." />;
 
   const title = offer.seo_title || `${offer.title} | Sadhana Kala Kendra`;
   const description = offer.seo_description || offer.description || "Offer details";
+  const stats = [
+    { label: "Status", value: "Active Offer" },
+  ];
 
   return (
-    <section className="max-w-4xl mx-auto px-4 py-12">
+    <>
       <Seo
         title={title}
         description={description}
@@ -49,18 +73,37 @@ const OfferDetail = () => {
           priceCurrency: "NPR",
         }}
       />
-      {offer.image_url ? (
-        <img src={asImage(offer.image_url)} alt={offer.title} className="w-full h-72 object-cover rounded-xl mb-6" />
-      ) : null}
-      <h1 className="text-3xl font-bold mb-3">{offer.title}</h1>
-      {offer.subtitle ? <p className="text-red-600 mb-2">{offer.subtitle}</p> : null}
-      <p className="text-gray-700 mb-4">{offer.description}</p>
-      {offer.cta_link ? (
-        <a href={offer.cta_link} target="_blank" rel="noreferrer" className="inline-block px-5 py-2 bg-red-600 text-white rounded-full">
-          {offer.cta_text || "Know More"}
-        </a>
-      ) : null}
-    </section>
+
+      <DetailPageLayout
+        backTo="/offers"
+        backLabel="Back to all offers"
+        imageSrc={offer.image_url ? asImage(offer.image_url) : ""}
+        imageAlt={offer.title}
+        title={offer.title}
+        description={offer.description || "Offer details will be updated soon."}
+        stats={stats}
+        actions={(
+          <>
+            {offer.cta_link ? (
+              <a
+                href={normalizeCtaUrl(offer.cta_link)}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center bg-[#cf0408] hover:bg-[#a90306] text-white font-semibold px-6 py-3 rounded-full transition"
+              >
+                {offer.cta_text || "Know More"}
+              </a>
+            ) : null}
+            <Link
+              to="/offers"
+              className="inline-flex items-center justify-center border border-[#191938] text-[#191938] hover:bg-[#191938] hover:text-white font-semibold px-6 py-3 rounded-full transition"
+            >
+              Explore More Offers
+            </Link>
+          </>
+        )}
+      />
+    </>
   );
 };
 

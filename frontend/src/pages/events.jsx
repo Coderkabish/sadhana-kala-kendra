@@ -4,6 +4,8 @@ import { useNavigate } from "react-router-dom";
 import { getUpcomingEvents, getPastEvents } from "../admin/services/eventsService";
 import { getAllNews } from "../admin/services/newsService";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 
 const Events = () => {
@@ -76,6 +78,15 @@ const Events = () => {
     <div
       key={event.event_id}
       className="bg-white rounded-2xl shadow-lg overflow-hidden transform hover:scale-105 transition duration-300 flex flex-col"
+      onClick={() => event.slug && navigate(`/events/${event.slug}`)}
+      role={event.slug ? "button" : undefined}
+      tabIndex={event.slug ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (event.slug && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          navigate(`/events/${event.slug}`);
+        }
+      }}
     >
       <div className="p-5 sm:p-6 flex flex-col flex-1">
         <h3 className="text-xl sm:text-2xl font-semibold text-[#191938] mb-2 font-['Playfair_Display']">
@@ -132,20 +143,27 @@ const Events = () => {
           Organized by: {event.organized_by || "Our School"}
         </p>
         {event.slug ? (
-          <button
-            type="button"
-            onClick={() => navigate(`/events/${event.slug}`)}
-            className="mt-4 text-sm font-semibold text-indigo-700 hover:text-indigo-900"
-          >
+          <p className="mt-4 text-sm font-semibold text-indigo-700 hover:text-indigo-900">
             View Details
-          </button>
+          </p>
         ) : null}
       </div>
     </div>
   );
 
   const PastEventListItem = ({ event }) => (
-    <div className="border-b border-gray-200 py-4 px-3 md:px-6 hover:bg-gray-100 transition duration-150">
+    <div
+      className={`border-b border-gray-200 py-4 px-3 md:px-6 hover:bg-gray-100 transition duration-150 ${event.slug ? "cursor-pointer" : ""}`}
+      onClick={() => event.slug && navigate(`/events/${event.slug}`)}
+      role={event.slug ? "button" : undefined}
+      tabIndex={event.slug ? 0 : undefined}
+      onKeyDown={(e) => {
+        if (event.slug && (e.key === "Enter" || e.key === " ")) {
+          e.preventDefault();
+          navigate(`/events/${event.slug}`);
+        }
+      }}
+    >
       <div className="flex flex-col md:flex-row md:justify-between md:items-start">
         <div className="md:w-3/5">
           <h4 className="text-lg font-semibold text-[#191938] font-['Playfair_Display']">
@@ -160,6 +178,9 @@ const Events = () => {
             {formatDateDisplay(event.event_date)}
           </p>
           <p className="text-xs text-gray-500 font-['Inter']">{event.venue}</p>
+          {event.slug ? (
+            <p className="text-xs font-semibold text-indigo-700 mt-1">View Details</p>
+          ) : null}
         </div>
       </div>
     </div>
@@ -187,19 +208,16 @@ const Events = () => {
         </div>
 
         {newsLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[1, 2, 3].map((n) => (
-              <div key={n} className="animate-pulse bg-white rounded-2xl h-80 shadow-sm"></div>
-            ))}
-          </div>
+          <PageLoader message="Loading latest updates..." />
         ) : newsError ? (
           <div className="p-4 rounded-xl bg-red-50 text-red-700 border border-red-100 text-center">
             {newsError}
           </div>
         ) : news.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl shadow-sm border border-dashed border-gray-300">
-            <p className="text-gray-500 italic">No news updates available at this time.</p>
-          </div>
+          <EmptyState
+            title="No News Updates Found"
+            description="Check back soon for the latest institutional announcements."
+          />
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {news.map((item) => {
@@ -282,14 +300,7 @@ const Events = () => {
       </div>
       <div className="max-w-7xl mx-auto px-4">
         {loading && (
-          <div className="min-h-screen flex items-center justify-center bg-white">
-            <div className="text-center">
-              <div className="animate-spin rounded-full h-16 w-16 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-              <p className="text-xl text-[#191938] font-['Inter']">
-                Loading {activeTab} events...
-              </p>
-            </div>
-          </div>
+          <PageLoader message={`Loading ${activeTab} events...`} />
         )}
         {error && (
           <div className="p-4 rounded-lg bg-red-100 text-red-800 border border-red-400 text-center">
@@ -297,16 +308,14 @@ const Events = () => {
           </div>
         )}
         {!loading && !error && events.length === 0 && (
-          <div className="col-span-full text-center text-gray-500 text-lg p-8 bg-yellow-50 rounded-lg font-['Roboto']">
-            <h3 className="text-xl font-semibold text-gray-700 font-['Playfair_Display']">
-              No {activeTab === "upcoming" ? "Upcoming" : "Past"} Events Found
-            </h3>
-            <p className="mt-2 text-gray-500 font-['Roboto']">
-              {activeTab === "upcoming"
+          <EmptyState
+            title={`No ${activeTab === "upcoming" ? "Upcoming" : "Past"} Events Found`}
+            description={
+              activeTab === "upcoming"
                 ? "Check back soon for new announcements!"
-                : "This list will be updated as events conclude."}
-            </p>
-          </div>
+                : "This list will be updated as events conclude."
+            }
+          />
         )}
         {!loading && !error && events.length > 0 && (
           <>

@@ -16,10 +16,23 @@ export default defineConfig(({ mode }) => {
     plugins: [
       react(), 
       tailwindcss(),
-      // Pre-render key SEO pages so crawlers receive static HTML in page source.
+      // Pre-render static SEO pages for crawlers - receives full HTML in page source
+      // Detail pages (/courses/:slug, /events/:slug, etc) are rendered client-side
+      // and discovered by Google through sitemap.xml (backend generated dynamically)
       vitePrerender({
         staticDir: path.join(process.cwd(), 'dist'),
-        routes: ['/', '/courses', '/offers', '/events', '/artists', '/gallery'],
+        routes: [
+          '/',              // Home page
+          '/about',         // About page
+          '/activities',    // Activities page
+          '/teachers',      // Teachers page
+          '/register',      // Visitor registration
+          '/courses',       // Courses listing
+          '/events',        // Events listing
+          '/offers',        // Offers listing
+          '/artists',       // Artists listing
+          '/gallery',       // Gallery
+        ],
         renderer: new PuppeteerRenderer({
           navigationOptions: {
             waitUntil: 'networkidle0',

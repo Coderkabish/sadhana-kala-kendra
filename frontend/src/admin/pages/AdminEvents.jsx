@@ -5,6 +5,7 @@ import {
   updateEvent,
   deleteEvent,
 } from "../services/eventsService";
+import PageLoader from "../../components/PageLoader";
 
 /** * PROFESSIONAL UI UTILS */
 const LucideIcon = ({ children }) => (
@@ -154,7 +155,7 @@ export default function AdminEvents() {
       const data = await getAllEvents();
       setEvents(data);
     } catch (err) {
-      setError("Failed to sync event records.");
+      setError(err?.message || "Failed to sync event records.");
     } finally {
       setLoading(false);
     }
@@ -177,7 +178,7 @@ export default function AdminEvents() {
       setEditingEvent(null);
       fetchData();
     } catch (err) {
-      setError("An error occurred while saving.");
+      setError(err?.message || "An error occurred while saving.");
     } finally {
       setIsSaving(false);
     }
@@ -190,7 +191,7 @@ export default function AdminEvents() {
       setMessage("Event record deleted.");
       fetchData();
     } catch (err) {
-      setError("Failed to delete record.");
+      setError(err?.message || "Failed to delete record.");
     }
   };
 
@@ -247,10 +248,7 @@ export default function AdminEvents() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-16 text-center">
-                <div className="animate-spin h-8 w-8 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-400 text-sm font-medium tracking-wide">Syncing records...</p>
-              </div>
+              <PageLoader message="Syncing records..." />
             ) : filteredEvents.length > 0 ? (
               /* MOBILE SCROLL CONTAINER */
               <div className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200">

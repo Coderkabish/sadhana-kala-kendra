@@ -156,12 +156,42 @@ app.use((req, res) => {
   res.status(404).json({ message: "Resource not found" });
 });
 
+// Multer error handler (catches file upload errors)
 app.use((err, req, res, next) => {
-  const statusCode = err.status || 500;
-  const message =
-    process.env.NODE_ENV === "production" && statusCode === 500
-      ? "Internal server error"
-      : err.message || "Internal server error";
+  // Handle multer-specific errors
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({ 
+      message: `File size exceeds 50MB limit. Please upload a smaller file.`
+    });
+  }
+  
+  if (err.code === 'LIMIT_FILE_COUNT') {
+    return res.status(400).json({ 
+      message: 'Too many files uploaded. Maximum 1 file allowed.'
+    });
+  }
+  
+  if (err.code === 'LIMIT_FIELD_KEY') {
+    return res.status(400).json({ 
+      message: 'Field key name too long.'
+    });
+  }
+  
+  if (err.code === 'LIMIT_FIELD_VALUE') {
+    return res.status(400).json({ 
+      message: 'Field value too long.'
+    });
+  }
+
+  // Custom multer validation error (from fileFilter)
+  if (err.name === 'MulterError' || (err.message && err.message.includes('Invalid'))) {
+    return res.status(400).json({ 
+      message: err.message || 'File upload validation failed.'
+    });
+  }
+
+  // Generic error handling
+       err.message || "Internal server error";
 
   // Log errors in production
   if (statusCode >= 500) {

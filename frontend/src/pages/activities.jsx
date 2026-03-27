@@ -1,6 +1,8 @@
 import { getAllActivities } from "../admin/services/activitiesService";
 import React, { useEffect, useState, useRef } from "react";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
 
 
 // Define your YouTube channel URL here
@@ -274,7 +276,7 @@ const Activities = () => {
                 </h2>
 
                 {loading ? (
-                    <p className="text-center text-gray-500 text-lg py-12">Loading...</p>
+                    <PageLoader message="Loading activities content..." />
                 ) : error ? (
                     <p className="text-center text-red-500 text-lg py-12">{error}</p>
                 ) : activities.length > 0 ? (
@@ -292,7 +294,10 @@ const Activities = () => {
                         ))}
                     </div>
                 ) : (
-                    <p className="col-span-full text-center text-gray-500 text-lg py-12 border-t border-gray-200 bg-white rounded-lg shadow-inner">No featured videos currently available. Please check back soon!</p>
+                    <EmptyState
+                        title="No Featured Videos Found"
+                        description="Check back soon for new video showcases."
+                    />
                 )}
             </div>
 

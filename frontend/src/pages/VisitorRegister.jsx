@@ -33,7 +33,6 @@ const VisitorRegister = () => {
     address: "",
     age: "",
     occupation: "",
-    photo: null,
   });
 
   const [courses, setCourses] = useState([]);
@@ -65,18 +64,11 @@ const VisitorRegister = () => {
     setMessageType("");
   };
 
-  const handlePhotoChange = (e) => {
-    setFormData((prev) => ({
-      ...prev,
-      photo: e.target.files[0] ? "photo-placeholder.jpg" : null,
-    }));
-  };
-
   const validateForm = () => {
-    const { full_name, email, phone, course_id } = formData;
+    const { full_name, email, phone, course_id, address, age, occupation } = formData;
 
-    if (!full_name || !email || !phone || !course_id) {
-      setMessage("Please fill in the Full Name, Email, Course and Phone fields.");
+    if (!full_name || !email || !phone || !course_id || !address || !age || !occupation) {
+      setMessage("Please fill in all fields. All information is required.");
       setMessageType("error");
       window.scrollTo({ top: 0, behavior: "smooth" });
       return false;
@@ -115,9 +107,8 @@ const VisitorRegister = () => {
       phone: sanitizeInput(formData.phone),
       course_id: parseInt(formData.course_id),
       address: sanitizeInput(formData.address),
-      age: parseInt(formData.age) || null,
+      age: parseInt(formData.age),
       occupation: sanitizeInput(formData.occupation),
-      photo: formData.photo,
     };
 
     try {
@@ -132,7 +123,6 @@ const VisitorRegister = () => {
         address: "",
         age: "",
         occupation: "",
-        photo: null,
       });
       window.scrollTo({ top: 0, behavior: "smooth" });
     } catch (err) {
@@ -186,7 +176,7 @@ const VisitorRegister = () => {
           className="bg-white p-6 md:p-12 rounded-2xl shadow-2xl shadow-gray-200 space-y-8 border border-gray-100"
         >
           {/* Mandatory Fields */}
-          <h2 className="text-xl font-semibold text-[#0f0f50] border-b border-teal-100 pb-3">Mandatory Information</h2>
+          <h2 className="text-xl font-semibold text-[#0f0f50] border-b border-teal-100 pb-3">Personal Information</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="full_name" className="block text-sm font-medium text-gray-700">
@@ -255,12 +245,12 @@ const VisitorRegister = () => {
             </select>
           </div>
 
-          {/* Optional Fields */}
+          {/* Additional Information */}
           <h2 className="text-xl font-semibold text-[#0f0f50] border-b border-teal-100 pb-3 mt-8">Additional Information</h2>
 
           <div>
             <label htmlFor="address" className="block text-sm font-medium text-gray-700">
-              Address
+              Address <span className="text-red-500">*</span>
             </label>
             <input
               type="text"
@@ -268,6 +258,7 @@ const VisitorRegister = () => {
               id="address"
               value={formData.address}
               onChange={handleChange}
+              required
               className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-teal-500 focus:border-teal-500 transition duration-150"
             />
           </div>
@@ -275,7 +266,7 @@ const VisitorRegister = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
               <label htmlFor="age" className="block text-sm font-medium text-gray-700">
-                Age
+                Age <span className="text-red-500">*</span>
               </label>
               <input
                 type="number"
@@ -285,13 +276,14 @@ const VisitorRegister = () => {
                 onChange={handleChange}
                 min="1"
                 max="100"
+                required
                 className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-teal-500 focus:border-teal-500 transition duration-150"
               />
             </div>
 
             <div>
               <label htmlFor="occupation" className="block text-sm font-medium text-gray-700">
-                Occupation
+                Occupation <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
@@ -299,25 +291,10 @@ const VisitorRegister = () => {
                 id="occupation"
                 value={formData.occupation}
                 onChange={handleChange}
+                required
                 className="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:ring-teal-500 focus:border-teal-500 transition duration-150"
               />
             </div>
-          </div>
-
-          {/* Photo Input */}
-          <div>
-            <label htmlFor="photo" className="block text-sm font-medium text-gray-700">
-              Photo (Optional)
-            </label>
-            <input
-              type="file"
-              name="photo"
-              id="photo"
-              onChange={handlePhotoChange}
-              accept="image/*"
-              className="mt-1 block w-full text-gray-700 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-teal-50 file:text-teal-700 hover:file:bg-teal-100 cursor-pointer"
-            />
-            <p className="mt-1 text-xs text-gray-500">Max file size 2MB. Jpg, Png only.</p>
           </div>
 
           <button

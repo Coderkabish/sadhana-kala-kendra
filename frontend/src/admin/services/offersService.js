@@ -31,6 +31,15 @@ export const getOfferById = async (id) => {
   }
 };
 
+export const getOffersByCourse = async (courseId) => {
+  try {
+    const response = await api.get(`${OFFERS_API}/course/${courseId}`, { withCredentials: true });
+    return response.data;
+  } catch (error) {
+    handleError(error);
+  }
+};
+
 export const createOffer = async (data) => {
   try {
     const response = await api.post(OFFERS_API, data, {
@@ -63,3 +72,4 @@ export const deleteOffer = async (id) => {
     handleError(error);
   }
 };
+

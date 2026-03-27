@@ -8,11 +8,14 @@ class OffersModel {
     const query = `
       SELECT
         offer_id,
+        course_id,
         title,
         slug,
         subtitle,
         description,
         image_url,
+        discount_percentage,
+        discount_type,
         cta_text,
         cta_link,
         valid_from,
@@ -38,7 +41,9 @@ class OffersModel {
 
   static async getAllForAdmin() {
     const [rows] = await db.query(
-      `SELECT * FROM Offers ORDER BY created_at DESC, offer_id DESC`
+      `SELECT o.*, c.course_name FROM Offers o
+       LEFT JOIN Courses c ON o.course_id = c.course_id
+       ORDER BY o.created_at DESC, o.offer_id DESC`
     );
     return rows;
   }
@@ -53,12 +58,27 @@ class OffersModel {
     return rows[0] || null;
   }
 
+  static async getByCourse(courseId) {
+    const [rows] = await db.query(
+      `SELECT * FROM Offers 
+       WHERE course_id = ? AND is_active = 1
+       AND (valid_from IS NULL OR valid_from <= CURDATE())
+       AND (valid_to IS NULL OR valid_to >= CURDATE())
+       ORDER BY created_at DESC`,
+      [courseId]
+    );
+    return rows;
+  }
+
   static async create({
+    course_id,
     title,
     slug,
     subtitle,
     description,
     image_url,
+    discount_percentage,
+    discount_type,
     cta_text,
     cta_link,
     valid_from,
@@ -71,11 +91,14 @@ class OffersModel {
   }) {
     const [result] = await db.query(
       `INSERT INTO Offers (
+        course_id,
         title,
         slug,
         subtitle,
         description,
         image_url,
+        discount_percentage,
+        discount_type,
         cta_text,
         cta_link,
         valid_from,
@@ -85,13 +108,16 @@ class OffersModel {
         seo_keywords,
         display_order,
         is_active
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
+        course_id || null,
         title,
         slug,
         subtitle || null,
         description || null,
         image_url || null,
+        discount_percentage ?? 0,
+        discount_type || 'percentage',
         cta_text || null,
         cta_link || null,
         valid_from || null,
@@ -118,11 +144,14 @@ class OffersModel {
       }
     };
 
+    pushField("course_id", payload.course_id);
     pushField("title", payload.title);
     pushField("slug", payload.slug);
     pushField("subtitle", payload.subtitle);
     pushField("description", payload.description);
     pushField("image_url", payload.image_url);
+    pushField("discount_percentage", payload.discount_percentage);
+    pushField("discount_type", payload.discount_type);
     pushField("cta_text", payload.cta_text);
     pushField("cta_link", payload.cta_link);
     pushField("valid_from", payload.valid_from);

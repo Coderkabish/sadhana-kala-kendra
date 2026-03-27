@@ -9,7 +9,8 @@ const router = express.Router();
 // ======== BOD ROUTES ========
 // PUBLIC
 router.get("/bod", AboutController.getAllBOD);
-router.get("/bod/:id", AboutController.getBODById);
+router.get("/bod/:slug", AboutController.getBODBySlug);
+router.get("/bod/by-id/:id", AboutController.getBODById);
 
 // ADMIN PROTECTED
 router.post("/bod", adminAuth, uploadMedia.single("profile_image"), AboutController.createBOD);

@@ -1,6 +1,18 @@
 import db from "../config/db.js";
 
 class CoursesModel {
+    static async getOffers(courseId) {
+        const [rows] = await db.query(
+            `SELECT * FROM Offers
+            WHERE course_id = ? AND is_active = 1
+            AND (valid_from IS NULL OR valid_from <= CURDATE())
+            AND (valid_to IS NULL OR valid_to >= CURDATE())
+            ORDER BY created_at DESC`,
+            [courseId]
+        );
+        return rows;
+    }
+
     static async getAll() {
         const [courses] = await db.query(`
             SELECT c.*, t.full_name AS teacher_name
@@ -44,6 +56,10 @@ class CoursesModel {
             [course_id]
         );
         course.schedules = schedules;
+
+        const offers = await this.getOffers(course_id);
+        course.offers = offers;
+
         return course;
     }
 
@@ -67,6 +83,10 @@ class CoursesModel {
             [course.course_id]
         );
         course.schedules = schedules;
+
+        const offers = await this.getOffers(course.course_id);
+        course.offers = offers;
+
         return course;
     }
 

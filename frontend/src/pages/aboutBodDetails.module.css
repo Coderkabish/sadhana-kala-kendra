@@ -1,0 +1,143 @@
+/* BOD Details Styling */
+.detailsContent {
+  font-family: "Roboto", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.8;
+  color: #1f2937;
+}
+
+.detailsContent p {
+  margin-bottom: 1.25rem;
+  font-size: 1.0625rem;
+}
+
+.detailsContent h1 {
+  font-size: 2rem;
+  font-weight: 700;
+  margin-top: 2rem;
+  margin-bottom: 1rem;
+  color: #111827;
+}
+
+.detailsContent h2 {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-top: 1.75rem;
+  margin-bottom: 0.875rem;
+  color: #1f2937;
+}
+
+.detailsContent h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  color: #374151;
+}
+
+.detailsContent strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.detailsContent em {
+  font-style: italic;
+}
+
+.detailsContent ul {
+  list-style-type: disc;
+  list-style-position: inside;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-left: 0;
+}
+
+.detailsContent ul li {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+}
+
+.detailsContent ol {
+  list-style-type: decimal;
+  list-style-position: inside;
+  margin-left: 1.5rem;
+  margin-bottom: 1.25rem;
+  padding-left: 0;
+}
+
+.detailsContent ol li {
+  margin-bottom: 0.5rem;
+  line-height: 1.75;
+}
+
+.detailsContent blockquote {
+  border-left: 4px solid #dc2626;
+  padding-left: 1.5rem;
+  margin-left: 0;
+  margin-right: 0;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+  color: #4b5563;
+  font-style: italic;
+  background-color: #f9fafb;
+  padding: 1rem 1rem 1rem 1.5rem;
+  border-radius: 0.375rem;
+}
+
+.detailsContent code {
+  background-color: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 0.25rem;
+  font-family: "Courier New", monospace;
+  font-size: 0.9375rem;
+  color: #7c2d12;
+}
+
+.detailsContent pre {
+  background-color: #1f2937;
+  color: #f3f4f6;
+  padding: 1rem;
+  border-radius: 0.375rem;
+  overflow-x: auto;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.detailsContent pre code {
+  background-color: transparent;
+  color: inherit;
+  padding: 0;
+}
+
+.detailsContent a {
+  color: #dc2626;
+  text-decoration: underline;
+  transition: color 0.2s ease;
+}
+
+.detailsContent a:hover {
+  color: #991b1b;
+  text-decoration: none;
+}
+
+.detailsContent table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 1.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.detailsContent table th,
+.detailsContent table td {
+  border: 1px solid #e5e7eb;
+  padding: 0.75rem;
+  text-align: left;
+}
+
+.detailsContent table th {
+  background-color: #f3f4f6;
+  font-weight: 600;
+}
+
+.detailsContent table tr:nth-child(even) {
+  background-color: #f9fafb;
+}

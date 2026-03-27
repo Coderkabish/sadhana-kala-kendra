@@ -53,14 +53,14 @@ class NewsModel {
     }
   }
 
-  static async create({ title, slug, content, news_date, image_url, seo_title, seo_description, seo_keywords }) {
+  static async create({ title, slug, rich_content, news_date, image_url, seo_title, seo_description, seo_keywords }) {
     const [result] = await db.query(
-      `INSERT INTO News (title, slug, content, news_date, image_url, seo_title, seo_description, seo_keywords)
+      `INSERT INTO News (title, slug, rich_content, news_date, image_url, seo_title, seo_description, seo_keywords)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         title,
         slug,
-        content || null,
+        rich_content || null,
         news_date || null,
         image_url || null,
         seo_title || null,
@@ -71,7 +71,7 @@ class NewsModel {
     return result.insertId;
   }
 
-  static async update(news_id, { title, slug, content, news_date, image_url, seo_title, seo_description, seo_keywords }) {
+  static async update(news_id, { title, slug, rich_content, news_date, image_url, seo_title, seo_description, seo_keywords }) {
     const fields = [];
     const values = [];
 
@@ -83,9 +83,9 @@ class NewsModel {
       fields.push("slug = ?");
       values.push(slug);
     }
-    if (content !== undefined) {
-      fields.push("content = ?");
-      values.push(content);
+    if (rich_content !== undefined) {
+      fields.push("rich_content = ?");
+      values.push(rich_content);
     }
     if (news_date !== undefined) {
       fields.push("news_date = ?");

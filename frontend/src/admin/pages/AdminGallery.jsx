@@ -6,6 +6,7 @@ import {
   deleteGalleryItem,
 } from "../services/galleryService";
 import { SERVER_ROOT_URL } from "../services/api";
+import PageLoader from "../../components/PageLoader";
 
 const Alert = ({ message, type, onClose }) => (
   <div className={`flex items-start justify-between p-4 mb-6 rounded-xl border ${type === "error" ? "bg-red-50 border-red-200 text-red-800" : "bg-emerald-50 border-emerald-200 text-emerald-800"}`}>
@@ -197,7 +198,7 @@ const AdminGallery = () => {
             isSaving={isSaving}
           />
         ) : loading ? (
-          <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center">Loading gallery items...</div>
+          <PageLoader message="Loading gallery items..." />
         ) : items.length === 0 ? (
           <div className="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-500">No gallery images yet.</div>
         ) : (

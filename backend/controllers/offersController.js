@@ -50,6 +50,16 @@ class OffersController {
     }
   }
 
+  static async getByCourse(req, res, next) {
+    try {
+      const { courseId } = req.params;
+      const rows = await OffersModel.getByCourse(courseId);
+      res.json(rows);
+    } catch (err) {
+      next(err);
+    }
+  }
+
   static async create(req, res, next) {
     try {
       const imageFile = req.file;
@@ -60,11 +70,14 @@ class OffersController {
       }
 
       const id = await OffersModel.create({
+        course_id: parseOptionalNumber(body.course_id),
         title: String(body.title).trim(),
         slug: slugify(body.slug || body.title),
         subtitle: toNullableText(body.subtitle),
         description: toNullableText(body.description),
         image_url: imageFile ? `/uploads/${imageFile.filename}` : toNullableText(body.image_url),
+        discount_percentage: parseOptionalNumber(body.discount_percentage) ?? 0,
+        discount_type: body.discount_type || 'percentage',
         cta_text: toNullableText(body.cta_text),
         cta_link: toNullableText(body.cta_link),
         valid_from: toNullableText(body.valid_from),
@@ -101,6 +114,7 @@ class OffersController {
       const body = req.body || {};
 
       const payload = {
+        course_id: body.course_id !== undefined ? parseOptionalNumber(body.course_id) : undefined,
         title: body.title !== undefined ? String(body.title).trim() : undefined,
         slug:
           body.slug !== undefined || body.title !== undefined
@@ -111,6 +125,8 @@ class OffersController {
         image_url: imageFile
           ? `/uploads/${imageFile.filename}`
           : (body.image_url !== undefined ? toNullableText(body.image_url) : undefined),
+        discount_percentage: body.discount_percentage !== undefined ? parseOptionalNumber(body.discount_percentage) : undefined,
+        discount_type: body.discount_type !== undefined ? body.discount_type : undefined,
         cta_text: toNullableText(body.cta_text),
         cta_link: toNullableText(body.cta_link),
         valid_from: body.valid_from !== undefined ? toNullableText(body.valid_from) : undefined,

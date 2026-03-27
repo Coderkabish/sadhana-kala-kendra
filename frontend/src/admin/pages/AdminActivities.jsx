@@ -5,6 +5,7 @@ import {
   updateActivity,
   deleteActivity,
 } from "../services/activitiesService";
+import PageLoader from "../../components/PageLoader";
 
 /** * PROFESSIONAL UI UTILS */
 const LucideIcon = ({ children }) => (
@@ -116,7 +117,7 @@ export default function AdminActivities() {
       const data = await getAllActivities();
       setActivities(data || []);
     } catch (err) {
-      setError("Failed to synchronize activities with server.");
+      setError(err?.message || "Failed to synchronize activities with server.");
     } finally {
       setLoading(false);
     }
@@ -138,7 +139,7 @@ export default function AdminActivities() {
       setEditingActivity(null);
       fetchData();
     } catch (err) {
-      setError("Operation failed. Please check your connection.");
+      setError(err?.message || "Operation failed. Please check your connection.");
     } finally {
       setIsSaving(false);
     }
@@ -151,7 +152,7 @@ export default function AdminActivities() {
       setMessage("Activity removed.");
       fetchData();
     } catch (err) {
-      setError("Delete operation failed.");
+      setError(err?.message || "Delete operation failed.");
     }
   };
 
@@ -203,10 +204,7 @@ export default function AdminActivities() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-20 text-center">
-                <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-500 font-medium">Fetching activities...</p>
-              </div>
+              <PageLoader message="Fetching activities..." />
             ) : activities.length > 0 ? (
               <table className="w-full text-left border-collapse">
                 <thead>

@@ -6,6 +6,7 @@ import {
   updateArtist,
   deleteArtist,
 } from "../services/artistsService";
+import PageLoader from "../../components/PageLoader";
 
 /** * PROFESSIONAL UI UTILS */
 const LucideIcon = ({ children }) => (
@@ -180,7 +181,7 @@ export default function AdminArtist() {
       const data = await getAllArtists();
       setArtists(data);
     } catch (err) {
-      setError("Failed to synchronize artist database.");
+      setError(err?.message || "Failed to synchronize artist database.");
     } finally {
       setLoading(false);
     }
@@ -199,7 +200,11 @@ export default function AdminArtist() {
     formData.append("seo_title", data.seo_title || "");
     formData.append("seo_description", data.seo_description || "");
     formData.append("seo_keywords", data.seo_keywords || "");
-    if (profileImageFile) formData.append("profile_image", profileImageFile);
+    
+    // Only include profile_image if a new file was uploaded
+    if (profileImageFile) {
+      formData.append("profile_image", profileImageFile);
+    }
 
     try {
       if (editingArtist?.artist_id) {
@@ -212,7 +217,7 @@ export default function AdminArtist() {
       setEditingArtist(null);
       fetchData();
     } catch (err) {
-      setError(err.response?.data?.message || "Operation failed.");
+      setError(err?.message || "Operation failed.");
     } finally {
       setIsSaving(false);
     }
@@ -225,7 +230,7 @@ export default function AdminArtist() {
       setMessage("Artist record removed.");
       fetchData();
     } catch (err) {
-      setError("Delete operation failed.");
+      setError(err?.message || "Delete operation failed.");
     }
   };
 
@@ -277,10 +282,7 @@ export default function AdminArtist() {
         ) : (
           <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
             {loading ? (
-              <div className="p-20 text-center">
-                <div className="animate-spin h-10 w-10 border-4 border-indigo-500 border-t-transparent rounded-full mx-auto mb-4"></div>
-                <p className="text-slate-500 font-medium">Synchronizing artist data...</p>
-              </div>
+              <PageLoader message="Synchronizing artist data..." />
             ) : artists.length > 0 ? (
               <table className="w-full text-left border-collapse">
                 <thead>

@@ -2,6 +2,9 @@ import React, { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import api, { SERVER_ROOT_URL } from "../admin/services/api";
 import Seo from "../components/Seo";
+import PageLoader from "../components/PageLoader";
+import EmptyState from "../components/EmptyState";
+import DetailPageLayout from "../components/DetailPageLayout";
 
 const asImage = (path) => {
   if (!path) return "";
@@ -19,7 +22,9 @@ const CourseDetail = () => {
     const load = async () => {
       try {
         setLoading(true);
-        const { data } = await api.get(`/courses/${slug}`);
+        const { data } = await api.get(`/courses/${slug}`, {
+          params: { _t: Math.random() } // Bypass cache
+        });
         setCourse(data);
       } catch (err) {
         setError("Course not found.");
@@ -31,22 +36,18 @@ const CourseDetail = () => {
   }, [slug]);
 
   if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-14 w-14 border-b-4 border-[#cf0408] mx-auto mb-4"></div>
-          <p className="text-lg text-[#191938] font-semibold">Loading course details...</p>
-        </div>
-      </div>
-    );
+    return <PageLoader message="Loading course details..." />;
   }
 
   if (error || !course) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
-        <div className="max-w-md text-center bg-white border border-gray-200 rounded-2xl p-8 shadow-sm">
-          <h1 className="text-2xl font-bold text-[#191938] mb-2">Course Not Found</h1>
-          <p className="text-gray-600 mb-6">The course you are looking for does not exist or may have been removed.</p>
+        <div className="max-w-md text-center">
+          <EmptyState
+            title="No Course Found"
+            description={error || "The course you are looking for does not exist or may have been removed."}
+            className="mb-6"
+          />
           <Link
             to="/courses"
             className="inline-block bg-[#cf0408] hover:bg-[#a90306] text-white font-semibold px-6 py-3 rounded-full transition"
@@ -62,6 +63,78 @@ const CourseDetail = () => {
   const description = course.seo_description || course.description || "Course details";
   const hasPrice = course.price !== null && course.price !== undefined && course.price !== "";
   const hasSchedules = Array.isArray(course.schedules) && course.schedules.length > 0;
+
+  const originalPrice = hasPrice ? Number(course.price) : null;
+  const safeOffers = Array.isArray(course.offers) ? course.offers : [];
+
+  const primaryOffer = safeOffers.find((offer) => {
+    const amount = Number(offer?.discount_percentage || 0);
+    return Number.isFinite(amount) && amount > 0;
+  }) || null;
+
+  const getDiscountedPrice = (basePrice, offer) => {
+    if (!Number.isFinite(basePrice) || !offer) return basePrice;
+
+    const amount = Number(offer.discount_percentage || 0);
+    if (!Number.isFinite(amount) || amount <= 0) return basePrice;
+
+    if (offer.discount_type === "fixed") {
+      return Math.max(0, basePrice - amount);
+    }
+
+    const percent = Math.min(100, Math.max(0, amount));
+    return Math.max(0, (basePrice * (100 - percent)) / 100);
+  };
+
+  const finalPrice = Number.isFinite(originalPrice)
+    ? getDiscountedPrice(originalPrice, primaryOffer)
+    : null;
+
+  const hasDiscount =
+    Number.isFinite(originalPrice) &&
+    Number.isFinite(finalPrice) &&
+    finalPrice < originalPrice;
+
+  const PriceDisplay = () => {
+    if (!hasPrice) {
+      return <span>Price on request</span>;
+    }
+
+    if (!hasDiscount) {
+      return <span>NPR {originalPrice.toLocaleString()}</span>;
+    }
+
+    const badgeText =
+      primaryOffer?.discount_type === "fixed"
+        ? `NPR ${Number(primaryOffer.discount_percentage).toLocaleString()} OFF`
+        : `${Number(primaryOffer.discount_percentage)}% OFF`;
+
+    return (
+      <div className="flex items-center gap-3">
+        <span className="text-red-600 line-through text-sm font-semibold">
+          NPR {originalPrice.toLocaleString()}
+        </span>
+        <span className="text-green-600 font-bold text-lg">
+          NPR {Math.round(finalPrice).toLocaleString()}
+        </span>
+        <span className="bg-red-100 text-red-700 px-2 py-1 rounded text-sm font-semibold">
+          {badgeText}
+        </span>
+      </div>
+    );
+  };
+
+  const stats = [
+    { label: "Instructor", value: course.teacher_name || "N/A" },
+    {
+      label: "Price",
+      value: <PriceDisplay />,
+    },
+    {
+      label: "Schedule Status",
+      value: hasSchedules ? `${course.schedules.length} schedule option(s)` : "No schedules yet",
+    },
+  ];
 
   const formatTime = (timeValue) => {
     if (!timeValue) return "";
@@ -92,93 +165,97 @@ const CourseDetail = () => {
           },
         }}
       />
-
-      <section className="bg-gray-50 min-h-screen py-10 md:py-14">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
-            <Link to="/courses" className="text-[#cf0408] font-semibold hover:underline">
-              Back to all courses
-            </Link>
-          </div>
-
-          <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-            {course.image_url ? (
-              <div className="w-full h-64 md:h-96 bg-gray-100">
-                <img
-                  src={asImage(course.image_url)}
-                  alt={course.course_name}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            ) : null}
-
-            <div className="p-6 md:p-10">
-              <h1 className="text-3xl md:text-4xl font-extrabold text-[#191938] mb-3">{course.course_name}</h1>
-              <p className="text-gray-700 text-base md:text-lg leading-relaxed mb-8">{course.description}</p>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-                <div className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Instructor</p>
-                  <p className="text-base font-semibold text-[#191938]">{course.teacher_name || "N/A"}</p>
-                </div>
-                <div className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Price</p>
-                  <p className="text-base font-semibold text-[#191938]">
-                    {hasPrice ? `NPR ${Number(course.price).toLocaleString()}` : "Price on request"}
-                  </p>
-                </div>
-                <div className="rounded-xl border border-gray-200 p-4 bg-gray-50">
-                  <p className="text-xs uppercase tracking-wide text-gray-500 mb-1">Schedule Status</p>
-                  <p className="text-base font-semibold text-[#191938]">
-                    {hasSchedules ? `${course.schedules.length} schedule option(s)` : "No schedules yet"}
-                  </p>
-                </div>
-              </div>
-
-              <div className="rounded-xl border border-gray-200 p-5 bg-white mb-8">
-                <h2 className="text-xl font-bold text-[#191938] mb-4">Scheduled Classes</h2>
-                {hasSchedules ? (
-                  <div className="space-y-3">
-                    {course.schedules.map((schedule) => (
-                      <div
-                        key={schedule.schedule_id || `${schedule.class_day}-${schedule.start_time}-${schedule.end_time}`}
-                        className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-gray-50 px-4 py-3 border border-gray-100"
-                      >
-                        <p className="text-sm font-semibold text-gray-800">{schedule.class_day || "Day not set"}</p>
-                        <p className="text-sm text-gray-600">
-                          {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
-                          {schedule.teacher_name ? ` • ${schedule.teacher_name}` : ""}
-                        </p>
+      <DetailPageLayout
+        backTo="/courses"
+        backLabel="Back to all courses"
+        imageSrc={course.image_url ? asImage(course.image_url) : ""}
+        imageAlt={course.course_name}
+        title={course.course_name}
+        description={course.description || "Course details will be updated soon."}
+        stats={stats}
+        sections={(
+          <>
+            {hasDiscount && primaryOffer && (
+              <div className="rounded-xl border border-yellow-200 bg-yellow-50 p-5 mb-8">
+                <h2 className="text-xl font-bold text-yellow-900 mb-4">Special Offer Available!</h2>
+                <div className="space-y-3">
+                  {[primaryOffer].map((offer) => (
+                    <div
+                      key={offer.offer_id}
+                      className="rounded-lg bg-white px-4 py-3 border border-yellow-300 shadow-sm"
+                    >
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                        <div>
+                          <p className="text-sm font-semibold text-yellow-900">{offer.title}</p>
+                          {offer.subtitle && (
+                            <p className="text-xs text-yellow-700 mt-1">{offer.subtitle}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className="bg-red-500 text-white px-3 py-1 rounded-full text-sm font-bold">
+                            {offer.discount_type === "fixed"
+                              ? `NPR ${Number(offer.discount_percentage).toLocaleString()} OFF`
+                              : `${Number(offer.discount_percentage)}% OFF`}
+                          </span>
+                        </div>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p className="text-sm text-gray-600">No schedules set for this course yet.</p>
-                )}
-
-                <p className="mt-4 text-sm font-medium text-[#191938] bg-red-50 border border-red-100 rounded-lg px-4 py-3">
-                  Note: Special classes are available upon request based on student needs..
-                </p>
+                      {offer.description && (
+                        <p className="text-xs text-gray-600 mt-2">{offer.description}</p>
+                      )}
+                      {offer.valid_to && (
+                        <p className="text-xs text-yellow-700 font-semibold mt-2">
+                          Valid until: {new Date(offer.valid_to).toLocaleDateString()}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
+            )}
+            <div className="rounded-xl border border-gray-200 p-5 bg-white mb-8">
+              <h2 className="text-xl font-bold text-[#191938] mb-4">Scheduled Classes</h2>
+              {hasSchedules ? (
+                <div className="space-y-3">
+                  {course.schedules.map((schedule) => (
+                    <div
+                      key={schedule.schedule_id || `${schedule.class_day}-${schedule.start_time}-${schedule.end_time}`}
+                      className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 rounded-lg bg-gray-50 px-4 py-3 border border-gray-100"
+                    >
+                      <p className="text-sm font-semibold text-gray-800">{schedule.class_day || "Day not set"}</p>
+                      <p className="text-sm text-gray-600">
+                        {formatTime(schedule.start_time)} - {formatTime(schedule.end_time)}
+                        {schedule.teacher_name ? ` • ${schedule.teacher_name}` : ""}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-gray-600">No schedules set for this course yet.</p>
+              )}
 
-              <div className="flex flex-wrap gap-3">
-                <Link
-                  to="/register"
-                  className="inline-flex items-center justify-center bg-[#cf0408] hover:bg-[#a90306] text-white font-semibold px-6 py-3 rounded-full transition"
-                >
-                  Apply Now
-                </Link>
-                <Link
-                  to="/courses"
-                  className="inline-flex items-center justify-center border border-[#191938] text-[#191938] hover:bg-[#191938] hover:text-white font-semibold px-6 py-3 rounded-full transition"
-                >
-                  Explore More Courses
-                </Link>
-              </div>
+              <p className="mt-4 text-sm font-medium text-[#191938] bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+                Note: Special classes are available upon request based on student needs..
+              </p>
             </div>
-          </div>
-        </div>
-      </section>
+          </>
+        )}
+        actions={(
+          <>
+            <Link
+              to="/register"
+              className="inline-flex items-center justify-center bg-[#cf0408] hover:bg-[#a90306] text-white font-semibold px-6 py-3 rounded-full transition"
+            >
+              Apply Now
+            </Link>
+            <Link
+              to="/courses"
+              className="inline-flex items-center justify-center border border-[#191938] text-[#191938] hover:bg-[#191938] hover:text-white font-semibold px-6 py-3 rounded-full transition"
+            >
+              Explore More Courses
+            </Link>
+          </>
+        )}
+      />
     </>
   );
 };

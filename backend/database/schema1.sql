@@ -18,7 +18,6 @@ CREATE TABLE IF NOT EXISTS Students (
     address VARCHAR(150),
     age INT,
     occupation VARCHAR(100),
-    photo VARCHAR(255),
     registered_date DATETIME DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -112,11 +111,14 @@ CREATE TABLE IF NOT EXISTS News_Resources (
 
 CREATE TABLE IF NOT EXISTS Offers (
     offer_id INT AUTO_INCREMENT PRIMARY KEY,
+    course_id INT,
     title VARCHAR(255) NOT NULL,
     slug VARCHAR(255) NOT NULL UNIQUE,
     subtitle VARCHAR(255),
     description TEXT,
     image_url VARCHAR(500),
+    discount_percentage DECIMAL(5,2) DEFAULT 0,
+    discount_type ENUM('percentage', 'fixed') NOT NULL DEFAULT 'percentage',
     cta_text VARCHAR(120),
     cta_link VARCHAR(500),
     valid_from DATE,
@@ -128,7 +130,10 @@ CREATE TABLE IF NOT EXISTS Offers (
     is_active TINYINT UNSIGNED NOT NULL DEFAULT 1,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-    INDEX idx_offers_slug (slug)
+    FOREIGN KEY (course_id) REFERENCES Courses(course_id) ON UPDATE CASCADE ON DELETE SET NULL,
+    INDEX idx_offers_slug (slug),
+    INDEX idx_offers_course_id (course_id),
+    INDEX idx_offers_active (is_active)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS activities (
@@ -157,11 +162,16 @@ CREATE TABLE IF NOT EXISTS Artists (
 CREATE TABLE IF NOT EXISTS BOD (
     bod_id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
+    slug VARCHAR(255) NOT NULL UNIQUE,
     designation VARCHAR(100),
     bio TEXT,
     profile_image VARCHAR(255),
+    seo_title VARCHAR(255),
+    seo_description TEXT,
+    seo_keywords VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    INDEX idx_bod_slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS Programs (
@@ -191,7 +201,6 @@ CREATE TABLE IF NOT EXISTS team_members (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(150) NOT NULL,
     subtitle VARCHAR(200) NULL,
-    description TEXT NULL,
     image_url VARCHAR(255) NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
