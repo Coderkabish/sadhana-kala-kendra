@@ -18,6 +18,9 @@ build/
 out/
 *.log
 
+# Project files
+files/
+
 # IDE
 .vscode/
 .idea/
@@ -32,6 +35,7 @@ Thumbs.db
 # Backend specific
 backend/logs/
 backend/uploads/
+
 
 # Turbopack
 .turbopack/
