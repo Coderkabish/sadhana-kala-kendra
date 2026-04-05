@@ -18,7 +18,7 @@ build/
 out/
 *.log
 
-# Project files
+# Image files
 files/
 
 # IDE
