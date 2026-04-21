@@ -7,6 +7,7 @@ export interface Event {
   title?: string;
   slug?: string;
   description: string;
+  rich_content?: string;
   event_date: string;
   event_time?: string;
   venue?: string;

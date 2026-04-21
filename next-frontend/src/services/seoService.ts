@@ -3,6 +3,8 @@
  * Fetches SEO metadata from the backend API
  */
 
+import { API_CONFIG } from "../config/api";
+
 // Type definitions
 interface SEOMeta {
   title?: string;
@@ -42,7 +44,7 @@ interface JSONLDSchema {
   [key: string]: unknown;
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+const API_BASE_URL = API_CONFIG.BASE_URL;
 
 export class SEOService {
   /**

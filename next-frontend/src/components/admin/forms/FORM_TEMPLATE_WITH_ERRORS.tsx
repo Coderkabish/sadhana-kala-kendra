@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import FormInput from './FormInput';
 import FormSelect from './FormSelect';
 import FormTextarea from './FormTextarea';
-import { parseFormErrors, createSubmitError, clearFieldError } from '@/utils/errorHandler';
+import { parseFormErrors, clearFieldError } from '@/utils/errorHandler';
 import { teachersService } from '@/services/teachersService';
+import type { ParsedError } from '@/utils/errorHandler';
 
 interface TeacherFormData {
   full_name: string;
@@ -35,7 +36,7 @@ export default function TeacherFormTemplate({ teacher, teacherId, isEdit = false
   });
 
   // Field-specific errors object: { fieldName: "error message" }
-  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [errors, setErrors] = useState<ParsedError['fieldErrors']>({});
   const [loading, setLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -73,7 +74,7 @@ export default function TeacherFormTemplate({ teacher, teacherId, isEdit = false
     } catch (err: any) {
       // Parse API response and extract field-specific errors
       const fieldErrors = parseFormErrors(err);
-      setErrors(fieldErrors);
+      setErrors(fieldErrors.fieldErrors);
     } finally {
       setLoading(false);
     }

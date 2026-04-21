@@ -1,11 +1,23 @@
 import mysql from 'mysql2/promise';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
+const requiredDbVars = ['DB_HOST', 'DB_USER', 'DB_PASSWORD', 'DB_NAME', 'DB_PORT'];
+const missingDbVars = requiredDbVars.filter((name) => !process.env[name]);
+
+if (missingDbVars.length > 0) {
+  throw new Error(`Missing database environment variables: ${missingDbVars.join(', ')}`);
+}
+
+const schemaName = process.env.DB_NAME;
 
 const db = await mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: 'root',
-  database: 'sadhana_kala_kendra',
-  port: 3306,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: schemaName,
+  port: Number(process.env.DB_PORT),
 });
 
 console.log('\n' + '='.repeat(110));
@@ -34,7 +46,10 @@ const expectedSchema = {
   admin_audit_log: { columns: ['audit_id', 'admin_id', 'action', 'entity', 'entity_id', 'ip_address', 'created_at'], indexes: [] }
 };
 
-const [tables] = await db.query(`SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = 'sadhana_kala_kendra' ORDER BY TABLE_NAME`);
+const [tables] = await db.query(
+  'SELECT TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = ? ORDER BY TABLE_NAME',
+  [schemaName]
+);
 
 console.log(`📊 Total Tables Found in Database: ${tables.length}\n`);
 
@@ -52,8 +67,14 @@ for (const table of tables) {
     continue;
   }
 
-  const [columns] = await db.query(`SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'sadhana_kala_kendra' AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION`, [tableName]);
-  const [indexes] = await db.query(`SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = 'sadhana_kala_kendra' AND TABLE_NAME = ? AND INDEX_NAME != 'PRIMARY' ORDER BY INDEX_NAME`, [tableName]);
+  const [columns] = await db.query(
+    'SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? ORDER BY ORDINAL_POSITION',
+    [schemaName, tableName]
+  );
+  const [indexes] = await db.query(
+    "SELECT INDEX_NAME FROM INFORMATION_SCHEMA.STATISTICS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ? AND INDEX_NAME != 'PRIMARY' ORDER BY INDEX_NAME",
+    [schemaName, tableName]
+  );
 
   const actualColumns = columns.map(c => c.COLUMN_NAME.toLowerCase());
   const expectedColumns = expected.columns.map(c => c.toLowerCase());
@@ -100,7 +121,7 @@ console.log('='.repeat(110) + '\n');
 if (criticalIssues === 0 && warnings === 0) {
   console.log('✅ DATABASE SCHEMA PERFECTLY MATCHES schema1.sql!\n');
 } else if (criticalIssues > 0) {
-  console.log(`❌ SCHEMA INTEGRITY ISSUES: Run the following to fix:\n   mysql -h localhost -u root -proot sadhana_kala_kendra < database/schema1.sql\n`);
+  console.log(`❌ SCHEMA INTEGRITY ISSUES: Run the following to fix:\n   mysql -h ${process.env.DB_HOST} -u ${process.env.DB_USER} -p ${schemaName} < database/schema1.sql\n`);
 }
 
 await db.end();

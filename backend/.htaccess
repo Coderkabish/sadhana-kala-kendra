@@ -1,25 +1,7 @@
 # cPanel Node.js Application Configuration
-# This file is typically NOT needed if using cPanel's Node.js Selector
-# The Node.js Selector handles routing automatically
+# cPanel's Node.js Selector should route requests to the app automatically.
+# Keep this file free of hardcoded proxy targets so deployments do not depend on a placeholder port.
 
-# If you need manual proxy configuration:
-<IfModule mod_rewrite.c>
-  RewriteEngine On
-  
-  # Handle API requests - proxy to Node.js app
-  # Replace PORT_NUMBER with your actual port from cPanel Node.js Selector
-  RewriteCond %{REQUEST_FILENAME} !-f
-  RewriteCond %{REQUEST_FILENAME} !-d
-  RewriteRule ^(.*)$ http://127.0.0.1:PORT_NUMBER/$1 [P,L]
-</IfModule>
-
-# Fallback for servers without mod_proxy
-<IfModule !mod_proxy.c>
-  # Node.js Selector will handle this automatically
-  # No additional configuration needed
-</IfModule>
-
-# Security headers
 <IfModule mod_headers.c>
   Header set X-Content-Type-Options "nosniff"
   Header set X-Frame-Options "SAMEORIGIN"

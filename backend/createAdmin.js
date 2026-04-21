@@ -4,8 +4,13 @@ import bcrypt from "bcryptjs";
 
 dotenv.config();
 
-// Ensure DB_PORT is correctly prioritized, defaulting to 3306 if not set in .env
-const dbPort = process.env.DB_PORT || 3306; 
+// Ensure DB_PORT comes from the environment
+const dbPort = Number(process.env.DB_PORT);
+
+if (!dbPort) {
+  console.error("Error: DB_PORT must be set in the environment.");
+  process.exit(1);
+}
 
 const db = await mysql.createConnection({
   host: process.env.DB_HOST,

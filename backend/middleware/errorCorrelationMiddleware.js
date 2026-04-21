@@ -31,7 +31,11 @@ export const correlationIdMiddleware = (req, res, next) => {
  * Tracks last activity time and logs out if timeout exceeded
  */
 export const sessionTimeoutMiddleware = (req, res, next) => {
-  const SESSION_TIMEOUT = parseInt(process.env.SESSION_TIMEOUT || '900000'); // 15 min default
+  const SESSION_TIMEOUT = parseInt(process.env.SESSION_TIMEOUT, 10);
+
+  if (!Number.isFinite(SESSION_TIMEOUT)) {
+    throw new Error('SESSION_TIMEOUT must be configured in the environment');
+  }
   
   if (req.admin) {
     const now = Date.now();

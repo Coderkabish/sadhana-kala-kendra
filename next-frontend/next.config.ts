@@ -30,18 +30,6 @@ const nextConfig: NextConfig = {
   async redirects() {
     return [];
   },
-
-  // Rewrites for API proxy if backend is on different port
-  async rewrites() {
-    return {
-      beforeFiles: [
-        {
-          source: "/api/:path*",
-          destination: "http://localhost:5000/api/:path*",
-        },
-      ],
-    };
-  },
 };
 
 export default nextConfig;

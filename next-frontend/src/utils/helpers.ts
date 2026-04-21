@@ -4,7 +4,7 @@
  * Consolidates duplicate code for better maintainability
  */
 
-import { getApiUrl } from '@/config/api';
+import { API_CONFIG, getApiUrl } from '@/config/api';
 
 /**
  * Convert a string or object to a URL-safe slug
@@ -35,8 +35,8 @@ export const toSlug = (item: any): string => {
 export const buildImageUrl = (path: string | undefined | null): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+  const apiBase = API_CONFIG.BASE_URL;
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${apiBase}${normalizedPath}`;
 };
@@ -152,8 +152,8 @@ export const normalizeCtaUrl = (rawUrl: string): string => {
 export const asImage = (path: string | null): string => {
   if (!path) return '';
   if (path.startsWith('http')) return path;
-  
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || '';
+
+  const apiBase = API_CONFIG.BASE_URL;
   return `${apiBase}${path.startsWith('/') ? path : `/${path}`}`;
 };
 

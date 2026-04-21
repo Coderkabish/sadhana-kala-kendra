@@ -1,4 +1,6 @@
-const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { API_CONFIG } from '../config/api';
+
+const API_BASE = API_CONFIG.BASE_URL;
 
 // Helper function to generate slug from title
 export function generateActivitySlug(title: string): string {
@@ -21,8 +23,7 @@ export interface Activity {
 }
 
 export async function getAllActivities() {
-  const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL;
-  const url = `${apiBase.replace(/\/?$/, '')}/api/activities`;
+  const url = `${API_BASE}/api/activities`;
   const res = await fetch(url, { cache: 'no-store' });
   if (!res.ok) throw new Error('Failed to fetch activities');
   return res.json();

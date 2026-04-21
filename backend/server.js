@@ -29,11 +29,20 @@ import seoRoutes from "./routes/seoRoutes.js";
 // Load environment variables
 dotenv.config();
 
-// Validate required environment variables
-if (!process.env.JWT_SECRET) {
-    console.error("FATAL ERROR: JWT_SECRET is not defined.");
-    process.exit(1);
+const requiredEnvVars = ["JWT_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "SESSION_TIMEOUT"];
+const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+
+if (missingEnvVars.length > 0) {
+  console.error(`FATAL ERROR: Missing required environment variables: ${missingEnvVars.join(", ")}`);
+  process.exit(1);
 }
+
+if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
+  console.error("FATAL ERROR: FRONTEND_URL is required in production.");
+  process.exit(1);
+}
+
+const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, "") : "";
 
 const app = express();
 app.disable("x-powered-by");
@@ -53,9 +62,7 @@ const setCorpHeader = (req, res, next) => {
 };
 
 // Production-ready CORS configuration
-const allowedOrigins = [
-  process.env.FRONTEND_URL,
-].filter(Boolean); // Remove undefined values
+const allowedOrigins = frontendUrl ? [frontendUrl] : [];
 
 // In development, allow common localhost variants for convenience
 if (process.env.NODE_ENV !== "production") {
@@ -80,8 +87,8 @@ app.use(
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
         styleSrc: ["'self'"],
-        imgSrc: ["'self'", "data:", "blob:", process.env.FRONTEND_URL || ""].filter(Boolean),
-        connectSrc: ["'self'", process.env.FRONTEND_URL || ""].filter(Boolean),
+        imgSrc: ["'self'", "data:", "blob:", frontendUrl].filter(Boolean),
+        connectSrc: ["'self'", frontendUrl].filter(Boolean),
         objectSrc: ["'none'"],
         frameAncestors: ["'none'"],
       },
@@ -124,7 +131,9 @@ app.use(
         return;
       }
 
-      if (allowedOrigins.includes(origin)) {
+      const normalizedOrigin = origin.replace(/\/$/, "");
+
+      if (allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
       } else {
         callback(new Error("Not allowed by CORS"));
@@ -277,7 +286,12 @@ app.use((err, req, res, next) => {
 });
 
 // Get port from environment - cPanel usually assigns a specific port
-const PORT = process.env.PORT || 5000;
+const PORT = Number(process.env.PORT);
+
+if (!PORT) {
+  console.error("FATAL ERROR: PORT is not defined.");
+  process.exit(1);
+}
 
 // Start server
 const server = app.listen(PORT, () => {

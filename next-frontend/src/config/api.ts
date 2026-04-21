@@ -9,7 +9,7 @@ if (!process.env.NEXT_PUBLIC_API_BASE_URL) {
   throw new Error(
     'FATAL ERROR: NEXT_PUBLIC_API_BASE_URL environment variable is required. ' +
     'Please set it in your .env.local or deployment environment. ' +
-    'Example: NEXT_PUBLIC_API_BASE_URL=http://localhost:5000'
+    'Example: NEXT_PUBLIC_API_BASE_URL=https://api.example.com'
   );
 }
 

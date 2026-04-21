@@ -1,3 +1,5 @@
+import { programsService as eventsProgramsService } from './eventsService';
+
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 // Data normalization functions to map backend fields to frontend expectations
@@ -302,4 +304,5 @@ export const teamMembersService = {
 export const aboutService = {
   bodService,
   teamMembersService,
+  programsService: eventsProgramsService,
 };

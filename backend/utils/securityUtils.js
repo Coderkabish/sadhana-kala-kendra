@@ -94,7 +94,11 @@ export const sanitizeHtml = (str) => {
  */
 export const validateFileUpload = (file, maxSizeMB = 50) => {
   const MAX_SIZE = maxSizeMB * 1024 * 1024; // Convert to bytes
-  const ALLOWED_TYPES = (process.env.ALLOWED_FILE_TYPES || 'jpg,jpeg,png,gif').split(',');
+  const ALLOWED_TYPES = (process.env.ALLOWED_FILE_TYPES || '').split(',').map((type) => type.trim()).filter(Boolean);
+
+  if (ALLOWED_TYPES.length === 0) {
+    throw new Error('ALLOWED_FILE_TYPES must be configured in the environment');
+  }
   
   if (!file) {
     return { valid: false, error: 'No file provided' };

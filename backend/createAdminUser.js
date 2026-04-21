@@ -6,9 +6,20 @@ import bcrypt from "bcryptjs";
 
 async function createAdmin() {
   try {
-    // Test credentials
-    const username = "admin";
-    const password = "Admin@123"; // Change this to your desired password
+    const frontendUrl = process.env.FRONTEND_URL;
+    if (!frontendUrl) {
+      throw new Error("FRONTEND_URL must be configured in the environment");
+    }
+
+    const username = process.env.ADMIN_USERNAME;
+    if (!username) {
+      throw new Error("ADMIN_USERNAME must be configured in the environment");
+    }
+
+    const password = process.env.ADMIN_PASSWORD;
+    if (!password) {
+      throw new Error("ADMIN_PASSWORD must be configured in the environment");
+    }
 
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -36,7 +47,6 @@ async function createAdmin() {
 
     console.log("✅ Admin user created successfully!");
     console.log(`Admin ID: ${result.insertId}`);
-    const frontendUrl = process.env.FRONTEND_URL || 'FRONTEND_URL not configured';
     console.log(`\nLogin Credentials:\nURL: ${frontendUrl}/admin/login`);
     console.log(`Username: ${username}`);
     console.log(`Password: ${password}\n`);
