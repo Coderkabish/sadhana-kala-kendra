@@ -219,9 +219,20 @@ export default function HomePage() {
                     <>
                       <div className="h-52 overflow-hidden bg-gray-100">
                         {offer.image_url ? (
-                          <img src={getApiUrl(offer.image_url)} alt={offer.title} loading="lazy" className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" />
+                          <img 
+                            src={getApiUrl(offer.image_url)} 
+                            alt={offer.title} 
+                            loading="lazy" 
+                            className="w-full h-full object-cover transition-transform duration-500 hover:scale-105" 
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = '/logo.png'; // Fallback to logo
+                            }}
+                          />
                         ) : (
-                          <div className="h-full flex items-center justify-center text-gray-400">No image</div>
+                          <div className="h-full flex flex-col items-center justify-center text-gray-400 bg-gray-50">
+                            <img src="/logo.png" alt="Fallback" className="w-12 h-12 opacity-20 mb-2" />
+                            <span className="text-xs">No image available</span>
+                          </div>
                         )}
                       </div>
                       <div className="p-6">
@@ -284,8 +295,20 @@ export default function HomePage() {
               {data.artists?.length > 0 ? (
                 data.artists.slice(0, 6).map((artist) => (
                   <div key={artist.artist_id} className={`bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left ${artist.slug ? "cursor-pointer" : ""}`}>
-                    <div className="h-48 overflow-hidden bg-gray-100">
-                      <img src={getApiUrl(artist.profile_image)} alt={artist.full_name} loading="lazy" className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" />
+                    <div className="h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {artist.profile_image ? (
+                        <img 
+                          src={getApiUrl(artist.profile_image)} 
+                          alt={artist.full_name} 
+                          loading="lazy" 
+                          className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/logo.png';
+                          }}
+                        />
+                      ) : (
+                        <img src="/logo.png" alt="Fallback" className="w-20 h-20 opacity-20" />
+                      )}
                     </div>
                     <div className="p-6 text-center">
                       <h3 className="text-2xl font-bold mb-1 text-[#191938] font-Inter line-clamp-2">{artist.full_name}</h3>
@@ -318,8 +341,20 @@ export default function HomePage() {
               {data.courses?.length > 0 ? (
                 data.courses.slice(0, 6).map((course, idx) => (
                   <div key={course.id ? `${course.id}-${course.slug || idx}` : idx} className={`bg-white border border-gray-200 p-0 rounded-2xl shadow-xl hover:shadow-2xl transition duration-300 transform hover:-translate-y-1 overflow-hidden text-left ${course.slug ? "cursor-pointer" : ""}`}>
-                    <div className="h-48 overflow-hidden bg-gray-100">
-                      <img src={getApiUrl(course.image_url)} alt={course.course_name} loading="lazy" className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" />
+                    <div className="h-48 overflow-hidden bg-gray-100 flex items-center justify-center">
+                      {course.image_url ? (
+                        <img 
+                          src={getApiUrl(course.image_url)} 
+                          alt={course.course_name} 
+                          loading="lazy" 
+                          className="w-full h-full object-contain transition-transform duration-500 hover:scale-105" 
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = '/logo.png';
+                          }}
+                        />
+                      ) : (
+                        <img src="/logo.png" alt="Fallback" className="w-20 h-20 opacity-20" />
+                      )}
                     </div>
                     <div className="p-6 text-center">
                       <h3 className="text-2xl font-bold mb-3 text-[#191938] font-Inter">{course.course_name}</h3>

@@ -4,7 +4,7 @@
   dotenv.config();
 
   const requiredDbVars = ["DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME"];
-  const missingDbVars = requiredDbVars.filter((name) => !process.env[name]);
+  const missingDbVars = requiredDbVars.filter((name) => process.env[name] === undefined);
 
   if (missingDbVars.length > 0) {
     throw new Error(`FATAL ERROR: Missing database environment variables: ${missingDbVars.join(", ")}`);

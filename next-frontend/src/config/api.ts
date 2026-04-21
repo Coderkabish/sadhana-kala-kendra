@@ -34,10 +34,12 @@ export const API_CONFIG = {
  * @param path - API path (e.g., '/api/courses')
  * @returns Full URL
  */
-export function getApiUrl(path: string): string {
+export function getApiUrl(path: string | null | undefined): string {
+  if (!path) return '';
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   return `${API_CONFIG.BASE_URL}${normalizedPath}`;
 }
+
 
 /**
  * Fetch from API with error handling

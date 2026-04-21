@@ -30,7 +30,7 @@ import seoRoutes from "./routes/seoRoutes.js";
 dotenv.config();
 
 const requiredEnvVars = ["JWT_SECRET", "DB_HOST", "DB_USER", "DB_PASSWORD", "DB_NAME", "DB_PORT", "SESSION_TIMEOUT"];
-const missingEnvVars = requiredEnvVars.filter((name) => !process.env[name]);
+const missingEnvVars = requiredEnvVars.filter((name) => process.env[name] === undefined);
 
 if (missingEnvVars.length > 0) {
   console.error(`FATAL ERROR: Missing required environment variables: ${missingEnvVars.join(", ")}`);
