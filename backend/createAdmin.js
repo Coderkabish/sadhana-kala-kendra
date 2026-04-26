@@ -37,6 +37,18 @@ if (password.length < 8) {
 async function createAdmin() {
   try {
     console.log("Connected to MySQL database successfully");
+
+    // Fresh deployment safety: ensure admin table exists before insert.
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS admin_user (
+        admin_id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_admin_username (username)
+      ) ENGINE=InnoDB
+    `);
+
     const hashedPassword = await bcrypt.hash(password, 10); 
 
     const [result] = await db.execute(

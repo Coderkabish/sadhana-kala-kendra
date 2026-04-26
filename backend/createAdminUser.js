@@ -24,6 +24,17 @@ async function createAdmin() {
     // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Fresh deployment safety: ensure admin table exists before insert.
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS admin_user (
+        admin_id INT AUTO_INCREMENT PRIMARY KEY,
+        username VARCHAR(50) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        INDEX idx_admin_username (username)
+      ) ENGINE=InnoDB
+    `);
+
     console.log(`\n📝 Creating admin user with username: ${username}`);
     console.log(`🔒 Password: ${password}\n`);
 
