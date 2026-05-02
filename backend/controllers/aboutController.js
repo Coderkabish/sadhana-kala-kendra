@@ -122,12 +122,24 @@ class AboutController {
     static async updateBOD(req, res) {
         const { id } = req.params;
         const newImagePath = AboutController.getImagePath(req);
+        const clearImage = req.body.clear_image === "true";
         const displayOrderNum = req.body.display_order !== undefined && req.body.display_order !== null && req.body.display_order !== '' 
             ? parseInt(req.body.display_order, 10) 
             : undefined;
-        const updateData = { ...req.body, ...(newImagePath && { profile_image: newImagePath }), ...(displayOrderNum !== undefined && { display_order: displayOrderNum }) };
+        const updateData = {
+            ...req.body,
+            ...(displayOrderNum !== undefined && { display_order: displayOrderNum }),
+        };
+
+        if (newImagePath) {
+            updateData.profile_image = newImagePath;
+        }
+        if (clearImage) {
+            updateData.profile_image = null;
+        }
+
         try {
-            if (newImagePath) await AboutController.deleteOldBODImage(id);
+            if (newImagePath || clearImage) await AboutController.deleteOldBODImage(id);
             await AboutModel.updateBOD(id, updateData);
 
             await logAdminAction({
@@ -223,12 +235,24 @@ class AboutController {
     static async updateTeamMember(req, res) {
         const { id } = req.params;
         const newImage = AboutController.getImagePath(req);
+        const clearImage = req.body.clear_image === "true";
         const displayOrderNum = req.body.display_order !== undefined && req.body.display_order !== null && req.body.display_order !== '' 
             ? parseInt(req.body.display_order, 10) 
             : undefined;
-        const updateData = { ...req.body, ...(newImage && { image_url: newImage }), ...(displayOrderNum !== undefined && { display_order: displayOrderNum }) };
+        const updateData = {
+            ...req.body,
+            ...(displayOrderNum !== undefined && { display_order: displayOrderNum }),
+        };
+
+        if (newImage) {
+            updateData.image_url = newImage;
+        }
+        if (clearImage) {
+            updateData.image_url = null;
+        }
+
         try {
-            if (newImage) await AboutController.deleteOldTeamImage(id);
+            if (newImage || clearImage) await AboutController.deleteOldTeamImage(id);
             await AboutModel.updateTeamMember(id, updateData);
 
             await logAdminAction({

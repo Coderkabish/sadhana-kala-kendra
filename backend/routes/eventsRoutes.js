@@ -9,6 +9,7 @@ const router = express.Router();
 // PUBLIC ROUTES
 router.get("/programs", EventsController.getAllPrograms);
 router.get("/programs/:id/resources", EventsController.getProgramResources);
+router.get("/programs/by-id/:id", EventsController.getProgramById);
 router.get("/programs/:slug", EventsController.getProgramBySlug);
 
 // ADMIN PROTECTED ROUTES

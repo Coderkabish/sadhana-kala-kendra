@@ -2,47 +2,65 @@ import { programsService as eventsProgramsService } from './eventsService';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
 
+type RawEntity = Record<string, unknown>;
+
 // Data normalization functions to map backend fields to frontend expectations
-const normalizeBOD = (data: any): BOD | BOD[] => {
-  const normalizeSingleBOD = (item: any): BOD => {
-    const nameParts = (item.name || '').split(' ');
+const normalizeBOD = (data: unknown): BOD | BOD[] => {
+  const normalizeSingleBOD = (item: RawEntity): BOD => {
+    const fullName = typeof item.name === 'string' ? item.name : '';
+    const nameParts = fullName.split(' ');
     const firstname = nameParts[0] || '';
     const lastname = nameParts.slice(1).join(' ') || '';
+    const idValue = item.bod_id ?? item.id;
+    const numericId = typeof idValue === 'number' ? idValue : Number(idValue ?? 0);
+    const displayOrderValue = item.display_order;
+    const displayOrder = typeof displayOrderValue === 'number' ? displayOrderValue : undefined;
     
     return {
-      id: item.bod_id || item.id,
+      id: Number.isFinite(numericId) ? numericId : 0,
       firstname,
       lastname,
-      designation: item.designation,
-      profile_image: item.profile_image,
-      details_content: item.details_content,
-      display_order: item.display_order,
-      slug: item.slug,
-      seo_title: item.seo_title,
-      seo_description: item.seo_description,
-      seo_keywords: item.seo_keywords,
+      designation: typeof item.designation === 'string' ? item.designation : '',
+      profile_image: typeof item.profile_image === 'string' ? item.profile_image : undefined,
+      details_content: typeof item.details_content === 'string' ? item.details_content : undefined,
+      display_order: displayOrder,
+      slug: typeof item.slug === 'string' ? item.slug : undefined,
+      seo_title: typeof item.seo_title === 'string' ? item.seo_title : undefined,
+      seo_description: typeof item.seo_description === 'string' ? item.seo_description : undefined,
+      seo_keywords: typeof item.seo_keywords === 'string' ? item.seo_keywords : undefined,
     };
   };
 
   if (Array.isArray(data)) {
-    return data.map(normalizeSingleBOD);
+    return data.map((item) => normalizeSingleBOD((item ?? {}) as RawEntity));
   }
-  return normalizeSingleBOD(data);
+  return normalizeSingleBOD((data ?? {}) as RawEntity);
 };
 
-const normalizeTeamMember = (data: any): TeamMember | TeamMember[] => {
+const normalizeTeamMember = (data: unknown): TeamMember | TeamMember[] => {
+  const normalizeSingle = (item: RawEntity): TeamMember => {
+    const idValue = item.id;
+    const numericId = typeof idValue === 'number' ? idValue : Number(idValue ?? 0);
+    const displayOrderValue = item.display_order;
+    const displayOrder = typeof displayOrderValue === 'number' ? displayOrderValue : undefined;
+
+    return {
+      id: Number.isFinite(numericId) ? numericId : 0,
+      name: typeof item.name === 'string' ? item.name : '',
+      designation:
+        typeof item.designation === 'string'
+          ? item.designation
+          : (typeof item.subtitle === 'string' ? item.subtitle : ''),
+      image_url: typeof item.image_url === 'string' ? item.image_url : undefined,
+      description: typeof item.description === 'string' ? item.description : undefined,
+      display_order: displayOrder,
+    };
+  };
+
   if (Array.isArray(data)) {
-    return data.map(item => ({
-      ...item,
-      id: item.id,
-      designation: item.designation || item.subtitle,
-    })) as TeamMember[];
+    return data.map((item) => normalizeSingle((item ?? {}) as RawEntity));
   }
-  return {
-    ...data,
-    id: data.id,
-    designation: data.designation || data.subtitle,
-  } as TeamMember;
+  return normalizeSingle((data ?? {}) as RawEntity);
 };
 
 export interface BOD {
@@ -105,7 +123,7 @@ export const bodService = {
 
   getById: async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/about/bod/${id}`, { 
+      const response = await fetch(`${API_BASE}/api/about/bod/by-id/${id}`, { 
         credentials: 'include',
         cache: 'no-store'
       });
@@ -133,7 +151,7 @@ export const bodService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;
@@ -235,7 +253,7 @@ export const teamMembersService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;
@@ -266,7 +284,7 @@ export const teamMembersService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;

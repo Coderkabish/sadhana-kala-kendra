@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import { validationResult } from "express-validator";
 import { logAdminAction } from "../utils/auditLogger.js"; 
 import { getUserFriendlyError, ERROR_MESSAGES } from "../utils/errorMessages.js";
+import { getAuthCookieOptions } from "../utils/cookieUtils.js";
 
 class AdminController {
   static async login(req, res, next) {
@@ -42,13 +43,7 @@ class AdminController {
       );
 
       // Set token as HttpOnly cookie
-      res.cookie("adminToken", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax",
-        path: "/",
-        maxAge: 30 * 60 * 1000,
-      });
+      res.cookie("adminToken", token, getAuthCookieOptions({ maxAge: 30 * 60 * 1000 }));
 
       res.json({
         message: "Login successful",
@@ -63,10 +58,7 @@ class AdminController {
   static async logout(req, res, next) {
     try {
       res.clearCookie("adminToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax",
-        path: "/", 
+        ...getAuthCookieOptions(),
       });
 
       res.json({ message: "Logged out successfully" });
@@ -127,10 +119,7 @@ class AdminController {
       });
       
       res.clearCookie("adminToken", {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "Lax",
-        path: "/",
+        ...getAuthCookieOptions(),
       });
 
       res.json({ message: "Your password has been updated successfully. Please log in again." });

@@ -7,6 +7,7 @@ import { adminAuth } from "../middleware/authMiddleware.js";
 import { sessionTimeoutMiddleware } from "../middleware/errorCorrelationMiddleware.js";
 import { validateAdminLogin, validateAdminPasswordChange, handleValidationErrors } from "../utils/validationRules.js";
 import db from "../config/db.js";
+import { getAuthCookieOptions } from "../utils/cookieUtils.js";
 
 const router = express.Router();
 
@@ -22,13 +23,7 @@ router.get("/me", adminAuth, sessionTimeoutMiddleware, (req, res) => {
     { expiresIn: "20m" }
   );
 
-  res.cookie("adminToken", token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "Lax",
-    path: "/",
-    maxAge: 20 * 60 * 1000,
-  });
+  res.cookie("adminToken", token, getAuthCookieOptions({ maxAge: 20 * 60 * 1000 }));
 
   res.json({
     valid: true,

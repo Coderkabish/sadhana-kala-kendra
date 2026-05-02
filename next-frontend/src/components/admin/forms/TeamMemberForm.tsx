@@ -1,12 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface TeamMember {
   id?: number;
   name?: string;
   designation?: string;
+  description?: string;
   image_url?: string;
   display_order?: number;
 }
@@ -19,19 +19,18 @@ interface TeamMemberFormProps {
 }
 
 export default function TeamMemberForm({ member, onSubmit, onCancel, isSaving }: TeamMemberFormProps) {
-  const router = useRouter();
   const [formData, setFormData] = useState({
     name: member?.name || '',
     subtitle: member?.designation || '',
     display_order: member?.display_order || 0,
-    description: '',
+    description: member?.description || '',
   });
 
   const [image, setImage] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string>(member?.image_url ? `${process.env.NEXT_PUBLIC_API_BASE_URL}${member.image_url}` : '');
   const [error, setError] = useState('');
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
@@ -69,11 +68,13 @@ export default function TeamMemberForm({ member, onSubmit, onCancel, isSaving }:
 
       if (image) {
         submitData.append('image_url', image);
+      } else if (member?.image_url && !imagePreview) {
+        submitData.append('clear_image', 'true');
       }
 
       await onSubmit(submitData);
-    } catch (err: any) {
-      setError(err?.message || 'Failed to save');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save');
     }
   };
 
@@ -114,6 +115,15 @@ export default function TeamMemberForm({ member, onSubmit, onCancel, isSaving }:
           onChange={handleInputChange}
           placeholder="Designation/Role (e.g., Teacher, Coordinator) *"
           required
+          className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+        />
+
+        <textarea
+          name="description"
+          value={formData.description}
+          onChange={handleInputChange}
+          placeholder="Short description"
+          rows={3}
           className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
         />
       </div>

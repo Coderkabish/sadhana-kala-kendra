@@ -188,7 +188,7 @@ export const programsService = {
 
   getById: async (id: number) => {
     try {
-      const response = await fetch(`${API_BASE}/api/events/programs/${id}`, { 
+      const response = await fetch(`${API_BASE}/api/events/programs/by-id/${id}`, { 
         credentials: 'include',
         cache: 'no-store'
       });
@@ -215,7 +215,7 @@ export const programsService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;
@@ -244,7 +244,7 @@ export const programsService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;
@@ -270,7 +270,7 @@ export const programsService = {
           const error = await response.json();
           console.error('API error response:', error);
           errorMessage = error.details || error.message || error.sqlMessage || JSON.stringify(error);
-        } catch (e) {
+        } catch {
           const text = await response.text();
           console.error('API error text:', text);
           errorMessage = text || errorMessage;

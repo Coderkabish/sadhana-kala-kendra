@@ -1,4 +1,5 @@
 import { v4 as uuidv4 } from 'uuid';
+import { getAuthCookieOptions } from '../utils/cookieUtils.js';
 
 /**
  * Middleware to add error correlation ID to each request
@@ -44,8 +45,8 @@ export const sessionTimeoutMiddleware = (req, res, next) => {
     
     if (timeSinceLastActivity > SESSION_TIMEOUT) {
       // Session expired
-      res.clearCookie('adminToken');
-      res.clearCookie('lastActivity');
+      res.clearCookie('adminToken', getAuthCookieOptions());
+      res.clearCookie('lastActivity', getAuthCookieOptions());
       return res.status(401).json({
         success: false,
         message: 'Session expired due to inactivity',
@@ -54,12 +55,7 @@ export const sessionTimeoutMiddleware = (req, res, next) => {
     }
     
     // Update last activity timestamp
-    res.cookie('lastActivity', String(now), {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      sameSite: 'Lax',
-      maxAge: SESSION_TIMEOUT,
-    });
+    res.cookie('lastActivity', String(now), getAuthCookieOptions({ maxAge: SESSION_TIMEOUT }));
   }
   
   next();
