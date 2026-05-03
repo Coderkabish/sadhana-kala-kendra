@@ -1,4 +1,4 @@
-import { apiClient, API_BASE_URL } from './api';
+import { API_BASE_URL } from './api';
 
 export interface Registration {
   registration_id?: string | number;
