@@ -203,6 +203,45 @@ app.get("/", (req, res) => {
   res.send("Backend is running!");
 });
 
+// Health check endpoint - useful for monitoring and debugging
+app.get("/health", async (req, res) => {
+  try {
+    // Test database connection
+    const connection = await db.getConnection();
+    await connection.ping();
+    connection.release();
+    
+    res.json({
+      status: "healthy",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      environment: {
+        node_env: process.env.NODE_ENV,
+        port: process.env.PORT,
+      },
+      database: {
+        status: "connected",
+        host: process.env.DB_HOST,
+        database: process.env.DB_NAME,
+      },
+      correlationId: req.correlationId,
+    });
+  } catch (error) {
+    logger.error("Health check failed", {
+      error: error.message,
+      stack: error.stack,
+      correlationId: req.correlationId,
+    });
+    
+    res.status(503).json({
+      status: "unhealthy",
+      timestamp: new Date().toISOString(),
+      message: "Database connection failed",
+      correlationId: req.correlationId,
+    });
+  }
+});
+
 
 app.use("/api/server", (req, res, next) => {
   res.set("Cache-Control", "no-store, no-cache, must-revalidate, private");
@@ -277,12 +316,31 @@ app.use((err, req, res, next) => {
 
   // Log errors in production to keep technical details server-side
   if (statusCode >= 500) {
-    logger.error(`Error ${statusCode}: ${err.message}`, { stack: err.stack });
+    const errorContext = {
+      method: req.method,
+      path: req.path,
+      statusCode,
+      message: err.message,
+      stack: err.stack,
+      correlationId: req.correlationId,
+      timestamp: new Date().toISOString(),
+    };
+    
+    // Log database-specific errors with more context
+    if (err.code && err.code.startsWith('ER_')) {
+      errorContext.sqlCode = err.code;
+      errorContext.sqlMessage = err.sqlMessage;
+    }
+    
+    logger.error(`[${statusCode}] ${req.method} ${req.path}`, errorContext);
   }
 
   // Return user-friendly message to client
   const userMessage = getUserFriendlyError(message, statusCode);
-  res.status(statusCode).json({ message: userMessage });
+  res.status(statusCode).json({ 
+    message: userMessage,
+    correlationId: req.correlationId 
+  });
 });
 
 // Get port from environment - cPanel usually assigns a specific port
@@ -294,8 +352,25 @@ if (!PORT) {
 }
 
 // Start server
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, async () => {
   logger.info(`Server started on port ${PORT} in ${process.env.NODE_ENV || 'development'} mode`);
+  
+  // Test database connection
+  try {
+    const connection = await db.getConnection();
+    await connection.ping();
+    connection.release();
+    logger.info(`Database connected successfully to ${process.env.DB_HOST}:${process.env.DB_PORT || 3306}/${process.env.DB_NAME}`);
+  } catch (err) {
+    logger.error(`CRITICAL: Database connection failed on startup`, {
+      message: err.message,
+      code: err.code,
+      host: process.env.DB_HOST,
+      database: process.env.DB_NAME,
+      port: process.env.DB_PORT || 3306,
+      stack: err.stack,
+    });
+  }
 });
 
 // Graceful shutdown handler for production
