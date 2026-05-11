@@ -42,7 +42,28 @@ if (process.env.NODE_ENV === "production" && !process.env.FRONTEND_URL) {
   process.exit(1);
 }
 
-const frontendUrl = process.env.FRONTEND_URL ? process.env.FRONTEND_URL.replace(/\/$/, "") : "";
+const normalizeOrigin = (url) => url.replace(/\/$/, "");
+
+const getWwwVariant = (origin) => {
+  try {
+    const parsed = new URL(origin);
+    if (parsed.hostname.startsWith("www.")) {
+      parsed.hostname = parsed.hostname.replace(/^www\./, "");
+    } else {
+      parsed.hostname = `www.${parsed.hostname}`;
+    }
+    return normalizeOrigin(parsed.toString());
+  } catch {
+    return null;
+  }
+};
+
+const frontendUrl = process.env.FRONTEND_URL ? normalizeOrigin(process.env.FRONTEND_URL) : "";
+const frontendUrls = (process.env.FRONTEND_URLS || "")
+  .split(",")
+  .map((value) => value.trim())
+  .filter(Boolean)
+  .map(normalizeOrigin);
 
 const app = express();
 app.disable("x-powered-by");
@@ -62,7 +83,11 @@ const setCorpHeader = (req, res, next) => {
 };
 
 // Production-ready CORS configuration
-const allowedOrigins = frontendUrl ? [frontendUrl] : [];
+const explicitOrigins = [frontendUrl, ...frontendUrls].filter(Boolean);
+const variantOrigins = explicitOrigins
+  .map(getWwwVariant)
+  .filter(Boolean);
+const allowedOrigins = Array.from(new Set([...explicitOrigins, ...variantOrigins]));
 
 // In development, allow common localhost variants for convenience
 if (process.env.NODE_ENV !== "production") {
@@ -136,7 +161,9 @@ app.use(
       if (allowedOrigins.includes(normalizedOrigin)) {
         callback(null, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        const corsError = new Error(`Not allowed by CORS: ${normalizedOrigin}`);
+        corsError.statusCode = 403;
+        callback(corsError);
       }
     },
     credentials: true,
