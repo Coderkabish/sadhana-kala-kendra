@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Development Docker Compose Configuration
 # Use with: docker-compose -f docker-compose.dev.yml up
 # Features: Live code reloading, debug logging, exposed database
@@ -7,7 +5,7 @@ version: '3.8'
 services:
   # MySQL Database Service
   mysql:
-    image: mysql:8.0-alpine
+    image: mysql:8.0
     container_name: sadhana-db-dev
     environment:
       MYSQL_ROOT_PASSWORD: root_dev_password
