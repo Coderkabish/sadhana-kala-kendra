@@ -1,0 +1,128 @@
+version: '3.8'
+
+# Development Docker Compose Configuration
+# Use with: docker-compose -f docker-compose.dev.yml up
+# Features: Live code reloading, debug logging, exposed database
+
+services:
+  # MySQL Database Service
+  mysql:
+    image: mysql:8.0-alpine
+    container_name: sadhana-db-dev
+    environment:
+      MYSQL_ROOT_PASSWORD: root_dev_password
+      MYSQL_DATABASE: ${DB_NAME:-dswdijkn_sadhana}
+      MYSQL_USER: ${DB_USER:-dswdijkn_sadhana}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-dev_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_dev_data:/var/lib/mysql
+      - ./backend/database/schema1.sql:/docker-entrypoint-initdb.d/schema.sql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - sadhana-dev-network
+
+  # Backend API Service (with hot reload)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: sadhana-backend-dev
+    environment:
+      NODE_ENV: development
+      PORT: 5000
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-dswdijkn_sadhana}
+      DB_USER: ${DB_USER:-dswdijkn_sadhana}
+      DB_PASSWORD: ${DB_PASSWORD:-dev_password}
+      JWT_SECRET: ${JWT_SECRET:-dev_jwt_secret_for_local_testing_only}
+      SESSION_TIMEOUT: ${SESSION_TIMEOUT:-900000}
+      LOG_LEVEL: ${LOG_LEVEL:-debug}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      FRONTEND_URLS: ${FRONTEND_URLS:-http://localhost:3000,http://127.0.0.1:3000}
+      COOKIE_SAME_SITE: ${COOKIE_SAME_SITE:-Lax}
+      ADMIN_USERNAME: ${ADMIN_USERNAME:-admin}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-admin123}
+    ports:
+      - "5000:5000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend-logs:/app/logs
+      - backend-uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sadhana-dev-network
+    restart: unless-stopped
+    command: npm run dev || node server.js
+
+  # Frontend Next.js Service (with hot reload)
+  frontend:
+    build:
+      context: ./next-frontend
+      dockerfile: Dockerfile
+    container_name: sadhana-frontend-dev
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://backend:5000}
+    ports:
+      - "3000:3000"
+    depends_on:
+      - backend
+    volumes:
+      - ./next-frontend:/app
+      - /app/node_modules
+      - /app/.next
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - sadhana-dev-network
+    restart: unless-stopped
+    command: npm run dev
+
+  # phpMyAdmin for database management (optional)
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: sadhana-phpmyadmin
+    environment:
+      PMA_HOST: mysql
+      PMA_USER: ${DB_USER:-dswdijkn_sadhana}
+      PMA_PASSWORD: ${DB_PASSWORD:-dev_password}
+      PMA_ROOT_PASSWORD: root_dev_password
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - sadhana-dev-network
+    restart: unless-stopped
+
+volumes:
+  mysql_dev_data:
+    driver: local
+  backend-logs:
+    driver: local
+  backend-uploads:
+    driver: local
+
+networks:
+  sadhana-dev-network:
+    driver: bridge
