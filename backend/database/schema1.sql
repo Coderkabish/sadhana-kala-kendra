@@ -1,8 +1,7 @@
 -- Database
-CREATE DATABASE IF NOT EXISTS sadhana_kala_kendra 
-CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-
-USE sadhana_kala_kendra;
+-- Note: Do not hardcode database selection here.
+-- In Docker, this script runs against MYSQL_DATABASE from docker-compose/.env.
+-- For manual imports, select the target database before executing this file.
 
 
 -- Base Tables (No Dependencies)
